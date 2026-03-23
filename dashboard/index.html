@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cold Wallets</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--card:#161b22;--card2:#1c2128;--border:#30363d;
+  --text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;
+  --green:#3fb950;--red:#f85149;--yellow:#d29922;--orange:#db6d28;
+  --radius:10px;--shadow:0 2px 8px rgba(0,0,0,.3);
+}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;line-height:1.5;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.header h1{font-size:18px;font-weight:600;letter-spacing:-.5px}
+.header h1 span{color:var(--accent)}
+.badges{display:flex;gap:8px}
+.badge{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.badge.on{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.badge.off{background:rgba(248,81,73,.1);color:var(--red);border:1px solid rgba(248,81,73,.2)}
+.badge.warn{background:rgba(210,153,34,.1);color:var(--yellow);border:1px solid rgba(210,153,34,.2)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px;padding:20px 24px;max-width:1400px;margin:0 auto}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-head h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)}
+.card-body{padding:18px}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--card2);border-radius:8px;padding:12px;text-align:center}
+.stat .val{font-size:22px;font-weight:700}
+.stat .lbl{font-size:11px;color:var(--text2);text-transform:uppercase;margin-top:2px}
+
+.row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:none}
+.row .k{color:var(--text2);font-size:13px}
+.row .v{font-size:13px;font-weight:500}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.dot.g{background:var(--green)}.dot.r{background:var(--red)}.dot.y{background:var(--yellow)}
+
+input,select{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;width:100%;outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--accent)}
+input::placeholder{color:var(--text2)}
+label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
+.field{margin-bottom:12px}
+
+.btn{padding:10px 18px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;width:100%;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#4c95e8}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:#36a148}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:#d73a3a}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{padding:6px 12px;font-size:12px;width:auto}
+.btn-row{display:flex;gap:8px;margin-top:8px}
+
+.msg{padding:10px 14px;border-radius:6px;font-size:13px;margin-top:12px;line-height:1.4}
+.msg.ok{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.2);color:var(--green)}
+.msg.err{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.2);color:var(--red)}
+.msg.info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.15);color:var(--accent)}
+.msg.warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.2);color:var(--yellow)}
+
+.mono{font-family:'SF Mono',Consolas,monospace;font-size:12px;word-break:break-all}
+.addr-list{max-height:200px;overflow-y:auto}
+.addr-item{padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.addr-item:last-child{border:none}
+.addr-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--card2);color:var(--text2);text-transform:uppercase}
+
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px}
+.tab{padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+.footer{text-align:center;padding:20px;color:var(--text2);font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Cold <span>Wallets</span></h1>
+  <div class="badges" id="badges"></div>
+</div>
+
+<div class="grid">
+
+  <!-- STATUS -->
+  <div class="card">
+    <div class="card-head">
+      <h2>System Status</h2>
+      <button class="btn btn-ghost btn-sm" onclick="loadStatus()">Refresh</button>
+    </div>
+    <div class="card-body" id="status-body">
+      <div style="text-align:center;padding:20px;color:var(--text2)"><div class="spinner"></div> Loading...</div>
+    </div>
+  </div>
+
+  <!-- GENERATE WALLETS -->
+  <div class="card">
+    <div class="card-head"><h2>Generate Wallets</h2></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Generate offline cold wallets. Private keys are saved to file only, never displayed here.</p>
+      <div class="field">
+        <label>Count per crypto</label>
+        <select id="gen-count"><option>3</option><option>5</option><option>10</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="generateWallets(this)">Generate Cold Wallets</button>
+      <div id="gen-result"></div>
+    </div>
+  </div>
+
+  <!-- DISPOSABLE ADDRESSES -->
+  <div class="card">
+    <div class="card-head"><h2>Disposable Addresses</h2></div>
+    <div class="card-body">
+      <div class="stat-grid" id="disp-stats">
+        <div class="stat"><div class="val" id="d-unused">-</div><div class="lbl">Unused</div></div>
+        <div class="stat"><div class="val" id="d-active">-</div><div class="lbl">Active</div></div>
+        <div class="stat"><div class="val" id="d-funded">-</div><div class="lbl">Funded</div></div>
+        <div class="stat"><div class="val" id="d-spent">-</div><div class="lbl">Spent</div></div>
+      </div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-ghost btn-sm" onclick="genDisposable('btc',10,this)">+10 BTC</button>
+        <button class="btn btn-ghost btn-sm" onclick="genDisposable('eth',10,this)">+10 ETH</button>
+        <button class="btn btn-ghost btn-sm" onclick="genDisposable('both',10,this)">+10 Both</button>
+      </div>
+      <div style="margin-top:14px">
+        <div class="tabs">
+          <div class="tab active" onclick="getDispList('active',this)">Active</div>
+          <div class="tab" onclick="getDispList('funded',this)">Funded</div>
+          <div class="tab" onclick="getDispList('unused',this)">Unused</div>
+        </div>
+        <div class="addr-list" id="disp-list"></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="btn-row">
+          <button class="btn btn-ghost btn-sm" onclick="getDispAddr('btc',this)">Get BTC Address</button>
+          <button class="btn btn-ghost btn-sm" onclick="getDispAddr('eth',this)">Get ETH Address</button>
+        </div>
+      </div>
+      <div id="disp-result"></div>
+    </div>
+  </div>
+
+  <!-- SEND BTC -->
+  <div class="card">
+    <div class="card-head"><h2>Send Bitcoin</h2></div>
+    <div class="card-body">
+      <div class="msg warn" style="margin-top:0;margin-bottom:14px">Signing happens ONLINE. For max security, use CLI scripts.</div>
+      <div class="field">
+        <label>Private Key (WIF)</label>
+        <input type="password" id="btc-wif" placeholder="5J... or K... or L...">
+      </div>
+      <button class="btn btn-ghost" onclick="prepareBtc(this)">Check Balance</button>
+      <div id="btc-info" class="hidden" style="margin-top:14px">
+        <div id="btc-balance-info"></div>
+        <div class="field" style="margin-top:12px">
+          <label>Destination Address</label>
+          <input type="text" id="btc-dest" placeholder="bc1q... or 3... or 1...">
+        </div>
+        <div class="field">
+          <label>Fee Rate (sat/vB)</label>
+          <input type="number" id="btc-fee" value="10">
+        </div>
+        <button class="btn btn-danger" onclick="sendBtc(this)">Sign &amp; Broadcast</button>
+      </div>
+      <div id="btc-result"></div>
+    </div>
+  </div>
+
+  <!-- SEND ETH -->
+  <div class="card">
+    <div class="card-head"><h2>Send Ethereum</h2></div>
+    <div class="card-body">
+      <div class="msg warn" style="margin-top:0;margin-bottom:14px">Signing happens ONLINE. For max security, use CLI scripts.</div>
+      <div class="field">
+        <label>Private Key (hex)</label>
+        <input type="password" id="eth-pk" placeholder="0x...">
+      </div>
+      <button class="btn btn-ghost" onclick="prepareEth(this)">Check Balance</button>
+      <div id="eth-info" class="hidden" style="margin-top:14px">
+        <div id="eth-balance-info"></div>
+        <div class="field" style="margin-top:12px">
+          <label>Destination Address</label>
+          <input type="text" id="eth-dest" placeholder="0x...">
+        </div>
+        <button class="btn btn-danger" onclick="sendEth(this)">Sign &amp; Broadcast (EIP-1559)</button>
+      </div>
+      <div id="eth-result"></div>
+    </div>
+  </div>
+
+  <!-- RPC STATUS -->
+  <div class="card">
+    <div class="card-head"><h2>RPC Status</h2></div>
+    <div class="card-body" id="rpc-body">
+      <div style="text-align:center;padding:20px;color:var(--text2)">Loading...</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">Cold Wallets Dashboard &mdash; 127.0.0.1 only &mdash; Keys processed in memory, never stored by dashboard</div>
+
+<script>
+async function api(endpoint, data = {}) {
+  const r = await fetch('/api/' + endpoint, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  });
+  return r.json();
+}
+
+function $(id) { return document.getElementById(id); }
+function msg(id, text, type = 'info') {
+  $(id).innerHTML = `<div class="msg ${type}">${text}</div>`;
+}
+function loading(btn) {
+  btn.disabled = true;
+  btn._text = btn.innerHTML;
+  btn.innerHTML = '<div class="spinner"></div> Working...';
+}
+function done(btn) {
+  btn.disabled = false;
+  btn.innerHTML = btn._text;
+}
+
+async function loadStatus() {
+  try {
+    const s = await api('status');
+
+    // Badges
+    const b = $('badges');
+    const torBadge = s.tor?.connected
+      ? `<span class="badge on">Tor</span>`
+      : `<span class="badge off">Tor</span>`;
+    const adminBadge = s.admin
+      ? `<span class="badge on">Admin</span>`
+      : `<span class="badge warn">No Admin</span>`;
+    const depOk = s.deps && Object.values(s.deps).every(v => v);
+    const depBadge = depOk
+      ? `<span class="badge on">Deps OK</span>`
+      : `<span class="badge off">Missing Deps</span>`;
+    b.innerHTML = torBadge + adminBadge + depBadge;
+
+    // Status rows
+    const dot = (ok) => ok ? '<span class="dot g"></span>' : '<span class="dot r"></span>';
+    let html = '';
+    html += `<div class="row"><span class="k">Tor</span><span class="v">${dot(s.tor?.connected)}${s.tor?.connected ? 'Connected (port ' + s.tor.port + ') IP: ' + s.tor.ip : 'Not connected'}</span></div>`;
+    html += `<div class="row"><span class="k">Network</span><span class="v">${dot(s.online)}${s.online ? 'Online' : 'Offline'} (${s.adapters?.length || 0} adapters)</span></div>`;
+    html += `<div class="row"><span class="k">Admin</span><span class="v">${dot(s.admin)}${s.admin ? 'Yes' : 'No'}</span></div>`;
+    html += `<div class="row"><span class="k">Docker</span><span class="v">${dot(s.docker)}${s.docker ? 'Running' : 'Not available'}</span></div>`;
+    html += `<div class="row"><span class="k">Python</span><span class="v">${s.python || '?'}</span></div>`;
+    if (s.deps) {
+      const depList = Object.entries(s.deps).map(([k,v]) => `${dot(v)}${k}`).join(' ');
+      html += `<div class="row"><span class="k">Dependencies</span><span class="v">${depList}</span></div>`;
+    }
+    $('status-body').innerHTML = html;
+
+    // Disposable stats
+    if (s.disposable) {
+      $('d-unused').textContent = s.disposable.unused;
+      $('d-active').textContent = s.disposable.active;
+      $('d-funded').textContent = s.disposable.funded;
+      $('d-spent').textContent = s.disposable.spent;
+    }
+
+    // RPC
+    let rpcHtml = '';
+    if (s.rpc?.responding) {
+      rpcHtml = `<div class="row"><span class="k">Status</span><span class="v">${dot(true)}Responding on :8545</span></div>`;
+      rpcHtml += `<div class="row"><span class="k">Block</span><span class="v">#${s.rpc.block?.toLocaleString()}</span></div>`;
+    } else {
+      rpcHtml = `<div class="row"><span class="k">Status</span><span class="v">${dot(false)}Not responding on :8545</span></div>`;
+      rpcHtml += `<div class="msg info" style="margin-top:10px">Start RPC: <span class="mono">tools\\start_all_services.bat</span></div>`;
+    }
+    $('rpc-body').innerHTML = rpcHtml;
+
+  } catch (e) {
+    $('status-body').innerHTML = `<div class="msg err">Failed to load status: ${e.message}</div>`;
+  }
+}
+
+async function generateWallets(btn) {
+  loading(btn);
+  try {
+    const count = parseInt($('gen-count').value);
+    const r = await api('generate-wallets', { count });
+    if (r.error) { msg('gen-result', r.error, 'err'); return; }
+
+    let html = '<div class="msg ok" style="margin-bottom:10px">Wallets generated! Keys saved to file.</div>';
+    html += '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">ETH addresses:</div>';
+    r.ethereum.forEach(w => { html += `<div class="mono" style="padding:3px 0">${w.address}</div>`; });
+    html += '<div style="font-size:12px;color:var(--text2);margin:8px 0 6px">BTC addresses:</div>';
+    r.bitcoin.forEach(w => { html += `<div class="mono" style="padding:3px 0">${w.address}</div>`; });
+    html += `<div class="msg warn" style="margin-top:10px">File: <span class="mono">${r.file}</span><br>Note keys and DELETE the file!</div>`;
+    $('gen-result').innerHTML = html;
+  } catch (e) {
+    msg('gen-result', e.message, 'err');
+  } finally { done(btn); }
+}
+
+async function genDisposable(crypto, count, btn) {
+  loading(btn);
+  try {
+    const r = await api('generate-disposable', { crypto, count });
+    if (r.error) { msg('disp-result', r.error, 'err'); return; }
+    msg('disp-result', `Generated ${r.btc || 0} BTC + ${r.eth || 0} ETH addresses`, 'ok');
+    loadStatus();
+  } catch (e) { msg('disp-result', e.message, 'err'); }
+  finally { done(btn); }
+}
+
+async function getDispList(state, tabEl) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+  try {
+    const r = await api('disposable/list', { state });
+    const items = r[state] || [];
+    if (!items.length) {
+      $('disp-list').innerHTML = '<div style="padding:10px;color:var(--text2);font-size:12px">No addresses</div>';
+      return;
+    }
+    $('disp-list').innerHTML = items.map(a =>
+      `<div class="addr-item"><span class="mono">${a.address}</span><span class="addr-tag">${a.crypto}</span></div>`
+    ).join('');
+  } catch (e) { $('disp-list').innerHTML = `<div class="msg err">${e.message}</div>`; }
+}
+
+async function getDispAddr(crypto, btn) {
+  loading(btn);
+  try {
+    const r = await api('disposable/get-address', { crypto });
+    if (r.error) { msg('disp-result', r.error, 'err'); return; }
+    msg('disp-result', `${r.crypto.toUpperCase()}: <span class="mono">${r.address}</span><br>${r.warning}`, 'ok');
+    loadStatus();
+  } catch (e) { msg('disp-result', e.message, 'err'); }
+  finally { done(btn); }
+}
+
+async function prepareBtc(btn) {
+  loading(btn);
+  try {
+    const wif = $('btc-wif').value;
+    const r = await api('prepare-btc', { wif });
+    if (r.error) { msg('btc-result', r.error, 'err'); $('btc-info').classList.add('hidden'); return; }
+
+    const btcVal = (r.balance_sats / 1e8).toFixed(8);
+    $('btc-balance-info').innerHTML = `
+      <div class="row"><span class="k">Address</span><span class="v mono">${r.address}</span></div>
+      <div class="row"><span class="k">Type</span><span class="v">${r.type}</span></div>
+      <div class="row"><span class="k">Balance</span><span class="v">${btcVal} BTC (${r.balance_sats} sat)</span></div>
+      <div class="row"><span class="k">UTXOs</span><span class="v">${r.utxos}</span></div>
+      <div class="row"><span class="k">Recommended Fee</span><span class="v">${r.fees?.halfHourFee || 10} sat/vB</span></div>
+    `;
+    $('btc-fee').value = r.fees?.halfHourFee || 10;
+    $('btc-info').classList.remove('hidden');
+    $('btc-result').innerHTML = '';
+  } catch (e) { msg('btc-result', e.message, 'err'); }
+  finally { done(btn); }
+}
+
+async function sendBtc(btn) {
+  if (!confirm('Sign and broadcast BTC transaction? This is IRREVERSIBLE.')) return;
+  loading(btn);
+  try {
+    const r = await api('send-btc', {
+      wif: $('btc-wif').value,
+      destination: $('btc-dest').value,
+      fee_rate: parseInt($('btc-fee').value)
+    });
+    $('btc-wif').value = '';
+    if (r.error) { msg('btc-result', r.error, 'err'); return; }
+    if (r.success) {
+      msg('btc-result', `Sent ${r.amount_btc} BTC (fee: ${r.fee_btc})<br>TXID: <span class="mono">${r.txid}</span>`, 'ok');
+    } else {
+      msg('btc-result', `Signed but broadcast failed: ${r.error}<br>Saved to: <span class="mono">${r.file}</span>`, 'warn');
+    }
+    $('btc-info').classList.add('hidden');
+  } catch (e) { msg('btc-result', e.message, 'err'); }
+  finally { done(btn); }
+}
+
+async function prepareEth(btn) {
+  loading(btn);
+  try {
+    const pk = $('eth-pk').value;
+    const r = await api('prepare-eth', { private_key: pk });
+    if (r.error) { msg('eth-result', r.error, 'err'); $('eth-info').classList.add('hidden'); return; }
+
+    let feeLine = '';
+    if (r.fees) {
+      feeLine = r.fees.legacy
+        ? `<div class="row"><span class="k">Gas Price</span><span class="v">${r.fees.maxFee_gwei} Gwei (legacy)</span></div>`
+        : `<div class="row"><span class="k">Base Fee</span><span class="v">${r.fees.baseFee_gwei} Gwei</span></div>
+           <div class="row"><span class="k">Max Fee</span><span class="v">${r.fees.maxFee_gwei} Gwei</span></div>
+           <div class="row"><span class="k">Priority</span><span class="v">${r.fees.priority_gwei} Gwei</span></div>`;
+    }
+    $('eth-balance-info').innerHTML = `
+      <div class="row"><span class="k">Address</span><span class="v mono">${r.address}</span></div>
+      <div class="row"><span class="k">Balance</span><span class="v">${parseFloat(r.balance_eth).toFixed(6)} ETH</span></div>
+      <div class="row"><span class="k">Nonce</span><span class="v">${r.nonce}</span></div>
+      ${feeLine}
+    `;
+    $('eth-info').classList.remove('hidden');
+    $('eth-result').innerHTML = '';
+  } catch (e) { msg('eth-result', e.message, 'err'); }
+  finally { done(btn); }
+}
+
+async function sendEth(btn) {
+  if (!confirm('Sign and broadcast ETH transaction? This is IRREVERSIBLE.')) return;
+  loading(btn);
+  try {
+    const r = await api('send-eth', {
+      private_key: $('eth-pk').value,
+      destination: $('eth-dest').value
+    });
+    $('eth-pk').value = '';
+    if (r.error) { msg('eth-result', r.error, 'err'); return; }
+    if (r.success) {
+      msg('eth-result', `Sent ${r.amount_eth} ETH<br>TX: <span class="mono">${r.txid}</span>`, 'ok');
+    } else {
+      msg('eth-result', `Signed but broadcast failed: ${r.error}<br>Saved to: <span class="mono">${r.file}</span>`, 'warn');
+    }
+    $('eth-info').classList.add('hidden');
+  } catch (e) { msg('eth-result', e.message, 'err'); }
+  finally { done(btn); }
+}
+
+// Init
+loadStatus();
+getDispList('active', document.querySelector('.tab.active'));
+setInterval(loadStatus, 30000);
+</script>
+</body>
+</html>

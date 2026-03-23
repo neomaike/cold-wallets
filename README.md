@@ -4,6 +4,17 @@ Offline-first Bitcoin & Ethereum wallet toolkit with privacy by default.
 
 All network operations routed through Tor. Transaction signing happens with the internet physically disabled. RPC queries verified cryptographically via Helios light client.
 
+## Quick Start — Dashboard
+
+Double-click `start.bat`. It automatically:
+1. Checks Python and installs missing dependencies
+2. Detects and starts Tor if available
+3. Opens the dashboard at `http://127.0.0.1:8080`
+
+From the dashboard you can generate wallets, manage disposable addresses, check balances, and send BTC/ETH — all through a visual interface.
+
+For maximum security (offline signing), use the CLI scripts directly (see below).
+
 ## Features
 
 - **Offline signing** — internet disabled automatically during key generation and TX signing (requires Admin)
@@ -34,6 +45,11 @@ Or run `cold_wallets\install.bat`.
 
 ```
 Cold-Wallets/
+|-- start.bat                   ONE-CLICK launcher (auto-setup + dashboard)
+|-- dashboard/
+|   |-- server.py               API server (http.server, port 8080)
+|   +-- index.html              Single-file UI (dark theme, no dependencies)
+|
 |-- cold_wallets/               Core: generate, sign, send crypto
 |   |-- generate_wallets.py     Generate 3 ETH + 3 BTC wallets offline
 |   |-- sign_eth.py             Sign ETH offline (send-all + EIP-1559)
