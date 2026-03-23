@@ -215,13 +215,12 @@ def api_generate_wallets(data):
         }, f, indent=2)
 
     return {
-        "ethereum": [{"index": w["index"], "address": w["address"]}
-                     for w in eth],
+        "ethereum": [{"index": w["index"], "address": w["address"],
+                      "private_key": w["private_key"]} for w in eth],
         "bitcoin": [{"index": w["index"], "address": w["address"],
-                     "legacy": w["address_legacy"]} for w in btc],
+                     "legacy": w["address_legacy"],
+                     "wif": w["private_key_wif"]} for w in btc],
         "file": str(filepath),
-        "warning": "Private keys saved to file only. "
-                   "NEVER share this file. Delete after noting keys."
     }
 
 
