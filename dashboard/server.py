@@ -2,12 +2,15 @@
 """
 Cold Wallets Dashboard — lightweight API server
 Serves index.html and exposes wallet operations as JSON API.
-Binds to 127.0.0.1:8080 only.
+Binds to 127.0.0.1:8080 only. Uses ThreadingHTTPServer for concurrency.
 """
 
 import json
+import socket
 import sys
 import subprocess
+import threading
+import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from datetime import datetime
@@ -25,6 +28,33 @@ sys.path.insert(0, str(TOOLS_DIR))
 DASHBOARD_DIR = Path(__file__).parent
 PORT = 8080
 
+# Cache index.html in memory — it never changes at runtime
+_HTML_CACHE = None
+
+
+def _load_html():
+    global _HTML_CACHE
+    html_path = DASHBOARD_DIR / "index.html"
+    _HTML_CACHE = html_path.read_bytes()
+
+
+# --- Status cache (updated in background thread) ---
+
+_status_cache = None
+_status_lock = threading.Lock()
+
+
+def _tcp_probe(host, port, timeout=0.3):
+    """Fast TCP check — returns True if port is open"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    try:
+        sock.connect((host, port))
+        sock.close()
+        return True
+    except (ConnectionRefusedError, OSError, socket.timeout):
+        return False
+
 
 def check_import(module_name):
     try:
@@ -35,26 +65,17 @@ def check_import(module_name):
 
 
 def check_tor():
-    """Check Tor connectivity — fast TCP probe first, then verify"""
-    import socket
+    """Check Tor — fast TCP probe, then SOCKS verify only if port open"""
     for port in [9150, 9050]:
-        # Fast TCP check (100ms timeout) — skip if port closed
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(0.3)
-        try:
-            sock.connect(("127.0.0.1", port))
-            sock.close()
-        except (ConnectionRefusedError, OSError, socket.timeout):
+        if not _tcp_probe("127.0.0.1", port):
             continue
-
-        # Port is open — verify it's actually Tor
         try:
             import requests
             session = requests.Session()
             proxy = f"socks5h://127.0.0.1:{port}"
             session.proxies = {"http": proxy, "https": proxy}
             r = session.get(
-                "https://check.torproject.org/api/ip", timeout=8)
+                "https://check.torproject.org/api/ip", timeout=6)
             data = r.json()
             if data.get("IsTor"):
                 return {
@@ -64,7 +85,6 @@ def check_tor():
                 }
         except Exception:
             continue
-
     return {"connected": False, "ip": None, "port": None}
 
 
@@ -72,7 +92,8 @@ def check_docker():
     try:
         result = subprocess.run(
             ["docker", "version", "--format", "{{.Server.Version}}"],
-            capture_output=True, text=True, timeout=3)
+            capture_output=True, text=True, timeout=3,
+            creationflags=0x08000000)  # CREATE_NO_WINDOW on Windows
         return result.returncode == 0
     except Exception:
         return False
@@ -80,16 +101,8 @@ def check_docker():
 
 def check_rpc():
     """Check if RPC on 8545 is responding"""
-    import socket
-    # Fast TCP check first
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(0.3)
-    try:
-        sock.connect(("127.0.0.1", 8545))
-        sock.close()
-    except (ConnectionRefusedError, OSError, socket.timeout):
+    if not _tcp_probe("127.0.0.1", 8545):
         return {"responding": False, "block": None}
-
     try:
         import requests
         r = requests.post(
@@ -99,15 +112,14 @@ def check_rpc():
             timeout=2)
         if r.status_code == 200 and "result" in r.json():
             block_hex = r.json()["result"]
-            block_num = int(block_hex, 16)
-            return {"responding": True, "block": block_num}
+            return {"responding": True, "block": int(block_hex, 16)}
     except Exception:
         pass
     return {"responding": False, "block": None}
 
 
-def get_system_status():
-    """Collect full system status"""
+def _build_status():
+    """Build full system status (called from background thread)"""
     try:
         from network_control import get_network_adapters, is_online
         from network_control import require_admin
@@ -143,30 +155,65 @@ def get_system_status():
     }
 
 
+def _status_refresh_loop():
+    """Background thread: refresh status every 15s"""
+    global _status_cache
+    while True:
+        try:
+            new_status = _build_status()
+            with _status_lock:
+                _status_cache = new_status
+        except Exception:
+            pass
+        time.sleep(15)
+
+
+def get_system_status():
+    """Return cached status (never blocks the HTTP handler)"""
+    with _status_lock:
+        if _status_cache is not None:
+            return _status_cache
+    # First call — build synchronously but fast
+    # Skip slow checks on first load
+    return {
+        "tor": {"connected": False, "ip": None, "port": None},
+        "online": True, "admin": False, "adapters": [],
+        "rpc": {"responding": False, "block": None},
+        "docker": False,
+        "disposable": {"unused": 0, "active": 0,
+                       "funded": 0, "spent": 0},
+        "python": sys.version.split()[0],
+        "deps": {
+            "eth_account": check_import("eth_account"),
+            "bit": check_import("bit"),
+            "requests": check_import("requests"),
+            "PySocks": check_import("socks"),
+        },
+        "_loading": True
+    }
+
+
+# --- API handlers ---
+
 def api_generate_wallets(data):
-    """Generate cold wallets"""
     from generate_wallets import (
         generate_ethereum_wallets, generate_bitcoin_wallets)
 
-    count = data.get("count", 3)
+    count = min(data.get("count", 3), 20)
     eth = generate_ethereum_wallets(count)
     btc = generate_bitcoin_wallets(count)
 
-    # Save to file
     output_dir = COLD_WALLETS / "generated"
     output_dir.mkdir(exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filepath = output_dir / f"cold_wallets_{timestamp}.json"
 
-    save_data = {
-        "created_at": datetime.now().isoformat(),
-        "ethereum": eth,
-        "bitcoin": btc
-    }
     with open(filepath, "w") as f:
-        json.dump(save_data, f, indent=2)
+        json.dump({
+            "created_at": datetime.now().isoformat(),
+            "ethereum": eth, "bitcoin": btc
+        }, f, indent=2)
 
-    # Return addresses only (never expose private keys via HTTP)
     return {
         "ethereum": [{"index": w["index"], "address": w["address"]}
                      for w in eth],
@@ -179,11 +226,10 @@ def api_generate_wallets(data):
 
 
 def api_generate_disposable(data):
-    """Generate disposable address pool"""
     from generate_disposable import (
         generate_btc_addresses, generate_eth_addresses, save_addresses)
 
-    count = data.get("count", 10)
+    count = min(data.get("count", 10), 50)
     crypto = data.get("crypto", "both")
     result = {"btc": 0, "eth": 0}
 
@@ -191,7 +237,6 @@ def api_generate_disposable(data):
         btc = generate_btc_addresses(count)
         save_addresses(btc, "btc")
         result["btc"] = len(btc)
-
     if crypto in ["eth", "both"]:
         eth = generate_eth_addresses(count)
         save_addresses(eth, "eth")
@@ -201,7 +246,6 @@ def api_generate_disposable(data):
 
 
 def api_disposable_list(data):
-    """List disposable addresses"""
     from disposable_manager import (
         UNUSED_DIR, ACTIVE_DIR, FUNDED_DIR, SPENT_DIR, ensure_dirs)
     ensure_dirs()
@@ -214,14 +258,13 @@ def api_disposable_list(data):
         "unused": UNUSED_DIR, "active": ACTIVE_DIR,
         "funded": FUNDED_DIR, "spent": SPENT_DIR
     }
-
-    if state == "all":
-        states = ["unused", "active", "funded", "spent"]
-    else:
-        states = [state]
+    states = (["unused", "active", "funded", "spent"]
+              if state == "all" else [state])
 
     result = {}
     for s in states:
+        if s not in dirs:
+            continue
         entries = []
         for f in sorted(dirs[s].glob(pattern))[:20]:
             with open(f) as fp:
@@ -230,7 +273,6 @@ def api_disposable_list(data):
                 "crypto": addr_data.get("crypto"),
                 "address": addr_data.get("address"),
                 "status": addr_data.get("status"),
-                "created_at": addr_data.get("created_at"),
             })
         result[s] = entries
 
@@ -238,7 +280,6 @@ def api_disposable_list(data):
 
 
 def api_disposable_get(data):
-    """Get next available disposable address"""
     from disposable_manager import (
         UNUSED_DIR, ACTIVE_DIR, ensure_dirs)
     ensure_dirs()
@@ -275,7 +316,6 @@ def api_disposable_get(data):
 
 
 def api_prepare_btc(data):
-    """Prepare BTC transaction — fetch balance and estimate fees"""
     from enviar_btc import (
         get_tor_session, find_funded_address, fetch_fee_rates)
     from bit import Key
@@ -283,7 +323,6 @@ def api_prepare_btc(data):
     wif = data.get("wif", "").strip()
     if not wif:
         return {"error": "WIF required"}
-
     try:
         key = Key(wif)
     except Exception as e:
@@ -291,7 +330,7 @@ def api_prepare_btc(data):
 
     session = get_tor_session()
     if not session:
-        return {"error": "Tor not connected"}
+        return {"error": "Tor not connected. Open Tor Browser first."}
 
     address, addr_type, utxos = find_funded_address(session, key)
     if not utxos:
@@ -302,16 +341,13 @@ def api_prepare_btc(data):
     fees = fetch_fee_rates(session)
 
     return {
-        "address": address,
-        "type": addr_type,
-        "balance_sats": total_sats,
-        "utxos": len(utxos),
+        "address": address, "type": addr_type,
+        "balance_sats": total_sats, "utxos": len(utxos),
         "fees": fees,
     }
 
 
 def api_prepare_eth(data):
-    """Prepare ETH transaction — fetch balance and fees"""
     from enviar_eth import (
         get_tor_session, get_balance, get_nonce, get_eip1559_fees)
     from eth_account import Account
@@ -322,7 +358,6 @@ def api_prepare_eth(data):
         return {"error": "Private key required"}
     if not pk.startswith("0x"):
         pk = "0x" + pk
-
     try:
         account = Account.from_key(pk)
     except Exception as e:
@@ -330,18 +365,17 @@ def api_prepare_eth(data):
 
     session = get_tor_session()
     if not session:
-        return {"error": "Tor not connected"}
+        return {"error": "Tor not connected. Open Tor Browser first."}
 
     balance = get_balance(session, account.address)
     nonce = get_nonce(session, account.address)
     fees = get_eip1559_fees(session)
 
     if balance is None:
-        return {"error": "Could not fetch balance"}
+        return {"error": "Could not fetch balance via Tor"}
 
     WEI = Decimal(10**18)
     GWEI = Decimal(10**9)
-
     result = {
         "address": account.address,
         "balance_wei": balance,
@@ -351,17 +385,16 @@ def api_prepare_eth(data):
     if fees:
         result["fees"] = {
             "baseFee_gwei": str(Decimal(fees["baseFee"]) / GWEI),
-            "maxFee_gwei": str(Decimal(fees["maxFeePerGas"]) / GWEI),
+            "maxFee_gwei": str(
+                Decimal(fees["maxFeePerGas"]) / GWEI),
             "priority_gwei": str(
                 Decimal(fees["maxPriorityFeePerGas"]) / GWEI),
             "legacy": fees.get("legacy", False),
         }
-
     return result
 
 
 def api_send_btc(data):
-    """Sign and broadcast BTC transaction"""
     from enviar_btc import (
         get_tor_session, find_funded_address, build_unspents,
         estimate_tx_vsize, broadcast_tx)
@@ -379,7 +412,6 @@ def api_send_btc(data):
     valid, msg = validate_btc_address(dest)
     if not valid:
         return {"error": f"Invalid destination: {msg}"}
-
     try:
         key = Key(wif)
     except Exception as e:
@@ -401,15 +433,14 @@ def api_send_btc(data):
     send_sats = total_sats - fee_sats
 
     if send_sats <= 0:
-        return {"error": "Insufficient balance for fee"}
+        return {"error": f"Insufficient balance. Need {fee_sats} sat "
+                         f"for fee, have {total_sats} sat"}
 
-    # Sign (ONLINE — dashboard cannot disable network)
     key.unspents = unspents
     outputs = [(dest, send_sats, "satoshi")]
     raw_tx = key.create_transaction(
         outputs, fee=fee_sats, absolute_fee=True)
 
-    # Save
     output_dir = COLD_WALLETS / "signed_transactions"
     output_dir.mkdir(exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -423,7 +454,6 @@ def api_send_btc(data):
             "signed_at": datetime.now().isoformat()
         }, f, indent=2)
 
-    # Broadcast
     success, result = broadcast_tx(session, raw_tx)
 
     SAT = Decimal(100_000_000)
@@ -433,13 +463,11 @@ def api_send_btc(data):
         "error": None if success else result,
         "amount_btc": str(Decimal(send_sats) / SAT),
         "fee_btc": str(Decimal(fee_sats) / SAT),
-        "signed_online": True,
         "file": str(filepath),
     }
 
 
 def api_send_eth(data):
-    """Sign and broadcast ETH transaction"""
     from enviar_eth import (
         get_tor_session, get_balance, get_nonce,
         get_eip1559_fees, broadcast_tx)
@@ -458,7 +486,6 @@ def api_send_eth(data):
     valid, msg = validate_eth_address(dest)
     if not valid:
         return {"error": f"Invalid destination: {msg}"}
-
     try:
         account = Account.from_key(pk)
     except Exception as e:
@@ -473,7 +500,7 @@ def api_send_eth(data):
     fee_data = get_eip1559_fees(session)
 
     if balance_wei is None or nonce is None or fee_data is None:
-        return {"error": "Could not fetch on-chain data"}
+        return {"error": "Could not fetch on-chain data via Tor"}
 
     gas_limit = 21000
     gas_cost = gas_limit * fee_data["maxFeePerGas"]
@@ -501,7 +528,6 @@ def api_send_eth(data):
     signed = Account.sign_transaction(tx, pk)
     raw_tx = signed.raw_transaction.hex()
 
-    # Save
     output_dir = COLD_WALLETS / "signed_transactions"
     output_dir.mkdir(exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -523,19 +549,16 @@ def api_send_eth(data):
         "txid": result if success else None,
         "error": None if success else result,
         "amount_eth": str(Decimal(send_wei) / WEI),
-        "signed_online": True,
         "file": str(filepath),
     }
 
 
-# Route table
+# --- Route table ---
+
 API_ROUTES = {
     "/api/status": lambda d: get_system_status(),
     "/api/generate-wallets": api_generate_wallets,
     "/api/generate-disposable": api_generate_disposable,
-    "/api/disposable/status": lambda d: {
-        "counts": __import__(
-            "disposable_manager").get_address_count()},
     "/api/disposable/list": api_disposable_list,
     "/api/disposable/get-address": api_disposable_get,
     "/api/check-tor": lambda d: check_tor(),
@@ -546,33 +569,35 @@ API_ROUTES = {
 }
 
 
+# --- HTTP Handler ---
+
 class DashboardHandler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
-        # Suppress default logging to avoid leaking sensitive data
         if args and "/api/send" not in str(args[0]):
-            print(f"  [{self.command}] {args[0]}" if args else "")
+            msg = args[0] if args else ""
+            print(f"  [{self.command}] {msg}")
 
     def _send_json(self, data, status=200):
         body = json.dumps(data, default=str).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", len(body))
+        self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
 
     def do_GET(self):
-        if self.path == "/" or self.path == "/index.html":
-            html_path = DASHBOARD_DIR / "index.html"
-            try:
-                content = html_path.read_bytes()
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Content-Length", len(content))
-                self.end_headers()
-                self.wfile.write(content)
-            except FileNotFoundError:
-                self.send_error(404, "index.html not found")
+        if self.path in ("/", "/index.html"):
+            if _HTML_CACHE is None:
+                self.send_error(500, "index.html not loaded")
+                return
+            self.send_response(200)
+            self.send_header(
+                "Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", len(_HTML_CACHE))
+            self.end_headers()
+            self.wfile.write(_HTML_CACHE)
         elif self.path == "/api/status":
             self._send_json(get_system_status())
         else:
@@ -598,8 +623,37 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e)}, 500)
 
 
+# --- Threading HTTP Server ---
+
+class ThreadedHTTPServer(HTTPServer):
+    """Handle each request in a new thread"""
+    allow_reuse_address = True
+
+    def process_request(self, request, client_address):
+        t = threading.Thread(
+            target=self.process_request_thread,
+            args=(request, client_address), daemon=True)
+        t.start()
+
+    def process_request_thread(self, request, client_address):
+        try:
+            self.finish_request(request, client_address)
+        except Exception:
+            self.handle_error(request, client_address)
+        finally:
+            self.shutdown_request(request)
+
+
 def main():
-    server = HTTPServer(("127.0.0.1", PORT), DashboardHandler)
+    _load_html()
+
+    # Start background status refresh
+    status_thread = threading.Thread(
+        target=_status_refresh_loop, daemon=True)
+    status_thread.start()
+
+    server = ThreadedHTTPServer(
+        ("127.0.0.1", PORT), DashboardHandler)
     print(f"[+] Dashboard running at http://127.0.0.1:{PORT}")
     print("[+] Press Ctrl+C to stop\n")
 
