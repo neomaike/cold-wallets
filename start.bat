@@ -15,22 +15,20 @@ echo.
 :: [1] CHECK PYTHON
 :: ============================================================================
 
-echo [1/4] Checking Python...
+echo [1/3] Checking Python...
 
 set "PYTHON=C:\Python314\python.exe"
 if not exist "%PYTHON%" (
-    echo       Python 3.14 not found at %PYTHON%
-    echo       Trying system python...
-    set "PYTHON=python"
-)
-
-"%PYTHON%" --version >nul 2>&1
-if errorlevel 1 (
-    echo.
-    echo  [ERROR] Python not found!
-    echo  Install Python 3.14 from https://www.python.org/downloads/
-    pause
-    exit /b 1
+    where python >nul 2>&1
+    if not errorlevel 1 (
+        set "PYTHON=python"
+    ) else (
+        echo.
+        echo  [ERROR] Python not found!
+        echo  Install Python from https://www.python.org/downloads/
+        pause
+        exit /b 1
+    )
 )
 
 for /f "tokens=*" %%v in ('"%PYTHON%" --version 2^>^&1') do echo       %%v [OK]
@@ -40,7 +38,7 @@ for /f "tokens=*" %%v in ('"%PYTHON%" --version 2^>^&1') do echo       %%v [OK]
 :: ============================================================================
 
 echo.
-echo [2/4] Checking dependencies...
+echo [2/3] Checking dependencies...
 
 "%PYTHON%" -c "import eth_account, bit, requests, socks" >nul 2>&1
 if errorlevel 1 (
@@ -58,67 +56,26 @@ if errorlevel 1 (
 )
 
 :: ============================================================================
-:: [3] CHECK TOR
+:: [3] START DASHBOARD (Tor check happens inside the dashboard)
 :: ============================================================================
 
 echo.
-echo [3/4] Checking Tor...
-
-set TOR_STATUS=not connected
-curl -s --socks5 127.0.0.1:9150 --connect-timeout 3 https://check.torproject.org/api/ip >nul 2>&1
-if not errorlevel 1 (
-    set TOR_STATUS=connected (port 9150^)
-    goto :tor_ok
-)
-
-curl -s --socks5 127.0.0.1:9050 --connect-timeout 3 https://check.torproject.org/api/ip >nul 2>&1
-if not errorlevel 1 (
-    set TOR_STATUS=connected (port 9050^)
-    goto :tor_ok
-)
-
-echo       Tor not detected. Trying to open Tor Browser...
-set "TOR_BROWSER=%USERPROFILE%\Desktop\Tor Browser\Browser\firefox.exe"
-set "TOR_BROWSER2=%PROGRAMFILES%\Tor Browser\Browser\firefox.exe"
-set "TOR_BROWSER3=C:\Tor Browser\Browser\firefox.exe"
-
-set "TOR_PATH="
-if exist "%TOR_BROWSER%" set "TOR_PATH=%TOR_BROWSER%"
-if exist "%TOR_BROWSER2%" if not defined TOR_PATH set "TOR_PATH=%TOR_BROWSER2%"
-if exist "%TOR_BROWSER3%" if not defined TOR_PATH set "TOR_PATH=%TOR_BROWSER3%"
-
-if defined TOR_PATH (
-    start "" "%TOR_PATH%"
-    echo       Waiting for Tor to connect (30s^)...
-    timeout /t 30 /nobreak >nul
-    curl -s --socks5 127.0.0.1:9150 --connect-timeout 5 https://check.torproject.org/api/ip >nul 2>&1
-    if not errorlevel 1 (
-        set TOR_STATUS=connected (port 9150^)
-    )
-) else (
-    echo       [WARN] Tor Browser not found.
-    echo       Download: https://www.torproject.org/download/
-    echo       Dashboard will work but network features require Tor.
-)
-
-:tor_ok
-echo       Tor: !TOR_STATUS!
-
-:: ============================================================================
-:: [4] START DASHBOARD
-:: ============================================================================
-
-echo.
-echo [4/4] Starting dashboard...
+echo [3/3] Starting dashboard...
 echo.
 echo  ============================================
 echo   Dashboard: http://127.0.0.1:8080
 echo  ============================================
 echo.
+echo  Opening browser...
+echo  Press Ctrl+C to stop.
+echo.
 
-:: Open browser after short delay
-start "" cmd /c "timeout /t 2 /nobreak >nul && start http://127.0.0.1:8080"
+:: Open browser after 1 second
+start "" cmd /c "timeout /t 1 /nobreak >nul && start http://127.0.0.1:8080"
 
 :: Start server (blocking)
 "%PYTHON%" dashboard\server.py
+
+echo.
+echo  Dashboard stopped.
 pause

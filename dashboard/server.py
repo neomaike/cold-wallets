@@ -35,35 +35,44 @@ def check_import(module_name):
 
 
 def check_tor():
-    """Check Tor connectivity without external imports"""
-    try:
-        import requests
-        for port in [9150, 9050]:
-            try:
-                session = requests.Session()
-                proxy = f"socks5h://127.0.0.1:{port}"
-                session.proxies = {"http": proxy, "https": proxy}
-                r = session.get(
-                    "https://check.torproject.org/api/ip", timeout=10)
-                data = r.json()
-                if data.get("IsTor"):
-                    return {
-                        "connected": True,
-                        "ip": data.get("IP", "unknown"),
-                        "port": port
-                    }
-            except Exception:
-                continue
-    except ImportError:
-        pass
+    """Check Tor connectivity — fast TCP probe first, then verify"""
+    import socket
+    for port in [9150, 9050]:
+        # Fast TCP check (100ms timeout) — skip if port closed
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.3)
+        try:
+            sock.connect(("127.0.0.1", port))
+            sock.close()
+        except (ConnectionRefusedError, OSError, socket.timeout):
+            continue
+
+        # Port is open — verify it's actually Tor
+        try:
+            import requests
+            session = requests.Session()
+            proxy = f"socks5h://127.0.0.1:{port}"
+            session.proxies = {"http": proxy, "https": proxy}
+            r = session.get(
+                "https://check.torproject.org/api/ip", timeout=8)
+            data = r.json()
+            if data.get("IsTor"):
+                return {
+                    "connected": True,
+                    "ip": data.get("IP", "unknown"),
+                    "port": port
+                }
+        except Exception:
+            continue
+
     return {"connected": False, "ip": None, "port": None}
 
 
 def check_docker():
     try:
         result = subprocess.run(
-            ["docker", "info"], capture_output=True,
-            text=True, timeout=5)
+            ["docker", "version", "--format", "{{.Server.Version}}"],
+            capture_output=True, text=True, timeout=3)
         return result.returncode == 0
     except Exception:
         return False
@@ -71,13 +80,23 @@ def check_docker():
 
 def check_rpc():
     """Check if RPC on 8545 is responding"""
+    import socket
+    # Fast TCP check first
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(0.3)
+    try:
+        sock.connect(("127.0.0.1", 8545))
+        sock.close()
+    except (ConnectionRefusedError, OSError, socket.timeout):
+        return {"responding": False, "block": None}
+
     try:
         import requests
         r = requests.post(
             "http://127.0.0.1:8545",
             json={"jsonrpc": "2.0", "method": "eth_blockNumber",
                   "params": [], "id": 1},
-            timeout=3)
+            timeout=2)
         if r.status_code == 200 and "result" in r.json():
             block_hex = r.json()["result"]
             block_num = int(block_hex, 16)
