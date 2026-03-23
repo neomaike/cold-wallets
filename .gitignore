@@ -28,6 +28,9 @@ venv/
 .vscode/
 .idea/
 
+# Tor runtime (downloaded automatically)
+tools/tor_runtime/
+
 # AI assistant config
 CLAUDE.md
 .claude/

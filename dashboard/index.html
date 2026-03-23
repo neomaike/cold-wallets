@@ -105,6 +105,14 @@ label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
     <div class="card-body" id="status-body">
       <div style="text-align:center;padding:20px;color:var(--text2)"><div class="spinner"></div> Loading...</div>
     </div>
+    <div id="tor-controls" class="hidden" style="padding:0 18px 18px">
+      <div class="btn-row">
+        <button class="btn btn-green btn-sm" onclick="torAction('start',this)">Start Tor</button>
+        <button class="btn btn-ghost btn-sm" onclick="torAction('stop',this)">Stop Tor</button>
+        <button class="btn btn-ghost btn-sm" onclick="torAction('download',this)">Download Tor</button>
+      </div>
+      <div id="tor-result"></div>
+    </div>
   </div>
 
   <!-- GENERATE WALLETS -->
@@ -275,6 +283,12 @@ async function loadStatus() {
     }
     $('status-body').innerHTML = html;
 
+    // Show Tor controls when not connected
+    const torCtrl = $('tor-controls');
+    if (torCtrl) {
+      torCtrl.classList.toggle('hidden', s.tor?.connected === true);
+    }
+
     // Disposable stats
     if (s.disposable) {
       $('d-unused').textContent = s.disposable.unused;
@@ -297,6 +311,16 @@ async function loadStatus() {
   } catch (e) {
     $('status-body').innerHTML = `<div class="msg err">Failed to load status: ${e.message}</div>`;
   }
+}
+
+async function torAction(action, btn) {
+  loading(btn);
+  try {
+    const r = await api('tor/' + action);
+    msg('tor-result', r.msg, r.ok ? 'ok' : 'err');
+    if (r.ok) setTimeout(autoRefresh, 2000);
+  } catch (e) { msg('tor-result', e.message, 'err'); }
+  finally { done(btn); }
 }
 
 async function generateWallets(btn) {

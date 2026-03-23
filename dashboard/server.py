@@ -553,6 +553,31 @@ def api_send_eth(data):
     }
 
 
+def api_tor_start(data):
+    from tor_manager import start_tor, download_tor, status as tor_status
+    s = tor_status()
+    if s["running"]:
+        return {"ok": True, "msg": f"Tor already running on port {s['port']}"}
+    if not s["downloaded"]:
+        ok, msg = download_tor(progress_cb=lambda m: None)
+        if not ok:
+            return {"ok": False, "msg": msg}
+    ok, msg = start_tor()
+    return {"ok": ok, "msg": msg}
+
+
+def api_tor_stop(data):
+    from tor_manager import stop_tor
+    ok, msg = stop_tor()
+    return {"ok": ok, "msg": msg}
+
+
+def api_tor_download(data):
+    from tor_manager import download_tor
+    ok, msg = download_tor(progress_cb=lambda m: None)
+    return {"ok": ok, "msg": msg}
+
+
 # --- Route table ---
 
 API_ROUTES = {
@@ -562,6 +587,9 @@ API_ROUTES = {
     "/api/disposable/list": api_disposable_list,
     "/api/disposable/get-address": api_disposable_get,
     "/api/check-tor": lambda d: check_tor(),
+    "/api/tor/start": api_tor_start,
+    "/api/tor/stop": api_tor_stop,
+    "/api/tor/download": api_tor_download,
     "/api/prepare-btc": api_prepare_btc,
     "/api/prepare-eth": api_prepare_eth,
     "/api/send-btc": api_send_btc,
