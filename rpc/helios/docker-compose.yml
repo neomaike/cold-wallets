@@ -1,0 +1,126 @@
+# Helios Light Client - Docker Compose
+# Ethereum light client with cryptographic verification
+
+version: "3.8"
+
+services:
+  helios:
+    container_name: helios-client
+    # Official Helios image from a16z
+    # Check latest version: https://github.com/a16z/helios/releases
+    # Pin version for stability. Check releases: https://github.com/a16z/helios/releases
+    image: ghcr.io/a16z/helios:0.11.0
+
+    # Alternative: build from source
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    # SECURITY: Run as non-root user
+    user: "1000:1000"
+
+    # Mount configuration and data
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+      - ./data:/app/data
+
+    # CRITICAL: Bind to localhost ONLY
+    # This ensures RPC is never accessible from the network
+    ports:
+      - "127.0.0.1:8545:8545"
+      # Uncomment for WebSocket support (also localhost only)
+      # - "127.0.0.1:8546:8546"
+
+    # Command to start Helios with config file
+    command: >
+      helios
+      --config /app/config.toml
+
+    # Resource limits to prevent DoS
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8545", "-X", "POST", "-H", "Content-Type: application/json", "-d", "{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Network configuration
+    networks:
+      - helios-network
+
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+    # Read-only root filesystem where possible
+    # Note: Helios needs write access to data dir
+    # read_only: true
+    # tmpfs:
+    #   - /tmp
+
+# =============================================================================
+# OPTIONAL: Tor Sidecar for Privacy
+# =============================================================================
+# Uncomment this section to run Tor alongside Helios
+# Then update config.toml to use proxy = "socks5://tor:9050"
+
+#   tor:
+#     container_name: helios-tor
+#     image: osminogin/tor-simple:0.4.8
+#     restart: unless-stopped
+#     networks:
+#       - helios-network
+#     # No ports exposed - only accessible within Docker network
+#     security_opt:
+#       - no-new-privileges:true
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "5m"
+#         max-file: "2"
+
+networks:
+  helios-network:
+    driver: bridge
+    # Isolate this network
+    internal: false  # Needs internet for bootstrap RPC
+
+# =============================================================================
+# ALTERNATIVE CONFIGURATIONS
+# =============================================================================
+
+# For running multiple networks (mainnet + testnet):
+#
+# services:
+#   helios-mainnet:
+#     ...
+#     ports:
+#       - "127.0.0.1:8545:8545"
+#     volumes:
+#       - ./config-mainnet.toml:/app/config.toml:ro
+#
+#   helios-sepolia:
+#     ...
+#     ports:
+#       - "127.0.0.1:8546:8545"
+#     volumes:
+#       - ./config-sepolia.toml:/app/config.toml:ro

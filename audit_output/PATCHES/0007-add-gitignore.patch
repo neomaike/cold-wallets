@@ -1,0 +1,41 @@
+# PATCH 0007: Adicionar .gitignore para prevenir commit de segredos
+# Arquivo: .gitignore (novo)
+# Motivo: Prevenir que chaves privadas, credenciais e bytecode entrem em controle de versao
+# Teste: git status nao deve mostrar arquivos de chaves ou __pycache__
+# Severidade: Minor | Prioridade: P2
+
+# --- Novo arquivo: .gitignore ---
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Chaves privadas e dados sensíveis - NUNCA commitar
+cold_wallets/generated/
+cold_wallets/signed_transactions/
+cold_wallets/hot_disposable/address_pool/
+cold_wallets/hot_disposable/logs/
+cold_wallets/tx_data/
+cold_wallets/broadcast_logs/
+
+# Logs
+*.log
+proxy_log.txt
+
+# Ambiente
+.env
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

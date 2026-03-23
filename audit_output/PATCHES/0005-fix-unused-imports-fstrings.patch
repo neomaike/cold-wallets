@@ -1,0 +1,35 @@
+# PATCH 0005: Remover imports nao usados e f-strings sem placeholders
+# Arquivos: fetch_tx_data.py, eth_rpc_proxy.py, enviar_btc.py, enviar_eth.py, check_tor.py
+# Motivo: Codigo morto e warnings de lint
+# Teste: ruff check --select=F401,F541,F841 .
+# Severidade: Cosmetic | Prioridade: P2
+# NOTA: 34 dos 53 issues do ruff sao auto-fixaveis com `ruff check --fix`
+
+--- a/cold_wallets/tools/fetch_tx_data.py
++++ b/cold_wallets/tools/fetch_tx_data.py
+@@ -14,7 +14,6 @@
+-import os
+ import sys
+ import json
+
+--- a/tools/eth_rpc_proxy.py
++++ b/tools/eth_rpc_proxy.py
+@@ -15,7 +15,6 @@
+ from http.server import HTTPServer, BaseHTTPRequestHandler
+-from urllib.parse import urlparse
+
+--- a/cold_wallets/enviar_btc.py
++++ b/cold_wallets/enviar_btc.py
+@@ -93,7 +93,7 @@
+-        except Exception as e:
++        except Exception:
+             continue
+
+# f-strings sem placeholders: remover prefixo `f` nas seguintes linhas:
+# enviar_btc.py:153, 206, 293
+# enviar_eth.py:172, 215, 292
+# check_tor.py:36, 41, 44
+# broadcast_tor.py:339
+# fetch_tx_data.py:250, 280
+#
+# Correcao automatica: cd cold_wallets && ruff check --select=F541 --fix .

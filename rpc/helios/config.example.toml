@@ -1,0 +1,56 @@
+# Helios Light Client Configuration
+# NO API KEY REQUIRED - Uses public RPCs
+# INTEGRATED WITH TOR BROWSER (port 9150)
+
+# =============================================================================
+# CLIENT SETTINGS
+# =============================================================================
+
+[client]
+network = "mainnet"
+data_dir = "./data"
+log_level = "info"
+
+# =============================================================================
+# RPC SERVER SETTINGS
+# =============================================================================
+
+[rpc]
+# SECURITY: Localhost only - never change to 0.0.0.0
+bind_ip = "127.0.0.1"
+port = 8545
+# Restrict CORS to known wallet extensions (MetaMask, Rabby)
+# Add other extensions as needed
+cors_origins = ["chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn", "chrome-extension://acmacodkjbdgmoleebolmdjonilkdbch"]
+timeout = 30
+
+# =============================================================================
+# PRIVACY: TOR PROXY
+# =============================================================================
+# Docker Tor (recommended): port 9050
+# Tor Browser alternative: port 9150
+# Uncomment ONE of the lines below:
+proxy = "socks5://127.0.0.1:9050"
+# proxy = "socks5://127.0.0.1:9150"
+
+# =============================================================================
+# PUBLIC RPCS - NO API KEY NEEDED
+# =============================================================================
+
+[sources]
+# 1RPC - Privacy focused, no logging
+execution_rpc = "https://1rpc.io/eth"
+
+# Consensus RPC (public, no key needed)
+consensus_rpc = "https://www.lightclientdata.org"
+
+# =============================================================================
+# FALLBACK RPCS
+# =============================================================================
+
+[fallback]
+execution_rpcs = [
+    "https://eth.llamarpc.com",
+    "https://cloudflare-eth.com",
+    "https://ethereum.publicnode.com"
+]

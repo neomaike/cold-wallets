@@ -1,0 +1,131 @@
+# Optimism L2 Node - Docker Compose
+# Runs op-geth (execution) + op-node (rollup)
+
+version: "3.8"
+
+services:
+  # ==========================================================================
+  # OP-GETH - Execution Client
+  # ==========================================================================
+  op-geth:
+    container_name: op-geth
+    # Pin version. Check: https://github.com/ethereum-optimism/op-geth/releases
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101609.0
+    restart: unless-stopped
+
+    volumes:
+      - ./data/geth:/data
+
+    # SECURITY: Bind to localhost only
+    ports:
+      - "127.0.0.1:9545:8545"   # HTTP RPC
+      - "127.0.0.1:9546:8546"   # WebSocket
+      # Engine API - internal only, not exposed
+      # - "127.0.0.1:8551:8551"
+
+    command:
+      - --datadir=/data
+      - --http
+      - --http.addr=0.0.0.0
+      - --http.port=8545
+      - --http.api=eth,net,web3,debug,txpool
+      - --http.vhosts=localhost
+      - --http.corsdomain=chrome-extension://*
+      - --ws
+      - --ws.addr=0.0.0.0
+      - --ws.port=8546
+      - --ws.api=eth,net,web3,debug,txpool
+      - --ws.origins=chrome-extension://*
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.port=8551
+      - --authrpc.vhosts=*
+      - --authrpc.jwtsecret=/data/jwt.hex
+      - --syncmode=full
+      - --gcmode=full
+      - --op-network=op-mainnet
+      - --rollup.sequencerhttp=https://mainnet-sequencer.optimism.io
+      - --rollup.disabletxpoolgossip=true
+
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8545"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ==========================================================================
+  # OP-NODE - Rollup Node
+  # ==========================================================================
+  op-node:
+    container_name: op-node
+    # Pin version. Check: https://github.com/ethereum-optimism/optimism/releases
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.16.6
+    restart: unless-stopped
+    depends_on:
+      - op-geth
+
+    volumes:
+      - ./data/geth:/data:ro
+
+    command:
+      - op-node
+      # L1 RPC - CHANGE THIS to your Helios or L1 endpoint
+      - --l1=http://host.docker.internal:8545
+      - --l1.beacon=https://www.lightclientdata.org
+      # Alternative L1 RPCs:
+      # - --l1=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+      # - --l1=http://host.docker.internal:8545  # Helios
+      - --l2=http://op-geth:8551
+      - --l2.jwt-secret=/data/jwt.hex
+      - --network=op-mainnet
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=9545
+      - --syncmode=execution-layer
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+networks:
+  default:
+    driver: bridge
+
+# =============================================================================
+# NOTES
+# =============================================================================
+#
+# JWT Secret:
+# Generate before first run:
+#   openssl rand -hex 32 > data/geth/jwt.hex
+#
+# Disk Usage:
+# - Full node: ~200-400 GB
+# - Archive node: 1+ TB
+#
+# Initial Sync:
+# Takes several hours to days. Use snapshot for faster sync.
+#
+# L1 RPC:
+# Edit --l1 flag to point to your L1 source.
+# If using Helios: http://host.docker.internal:8545

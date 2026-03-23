@@ -1,0 +1,105 @@
+# PATCH 0004: Restringir CORS e adicionar seguranca basica ao proxy RPC
+# Arquivos: tools/eth_rpc_proxy.py
+# Motivo: CORS wildcard permite qualquer site fazer chamadas RPC
+# Teste: Abrir browser em site externo e tentar fetch('http://127.0.0.1:8545')
+# Severidade: Minor | Prioridade: P2
+
+--- a/tools/eth_rpc_proxy.py
++++ b/tools/eth_rpc_proxy.py
+@@ -3,6 +3,7 @@
+ import json
+ import sys
++import time
+ from http.server import HTTPServer, BaseHTTPRequestHandler
+-from urllib.parse import urlparse
+
+ try:
+     import requests
+@@ -26,6 +27,12 @@
+
+ current_rpc_index = 0
+ tor_session = None
++tor_session_created = 0
++request_count = 0
++
++# Origens permitidas (localhost e extensoes Chrome)
++ALLOWED_ORIGINS = {'http://127.0.0.1', 'http://localhost', 'chrome-extension://'}
++SESSION_MAX_AGE = 600  # Renovar sessao Tor a cada 10 minutos
+
+
+ def get_tor_session():
+     """Cria sessao requests com Tor"""
+-    global tor_session
++    global tor_session, tor_session_created, request_count
+
+-    if tor_session:
++    # Renova sessao se expirada
++    if tor_session and (time.time() - tor_session_created) < SESSION_MAX_AGE:
+         return tor_session
+
++    tor_session = None
+     session = requests.Session()
+
+     for proxy in TOR_PROXIES:
+@@ -57,8 +64,9 @@
+             response = session.get('https://check.torproject.org/api/ip', timeout=10)
+             if response.json().get('IsTor'):
+                 print(f"[+] Conectado ao Tor via {proxy}")
+                 print(f"    IP de saida: {response.json().get('IP')}")
+                 tor_session = session
++                tor_session_created = time.time()
++                request_count = 0
+                 return session
+         except Exception:
+             continue
+@@ -104,6 +112,18 @@
+ class RPCProxyHandler(BaseHTTPRequestHandler):
+     """Handler HTTP para proxy RPC"""
+
++    def _check_origin(self):
++        """Verifica se origem e permitida"""
++        origin = self.headers.get('Origin', '')
++        if not origin:
++            return True  # Sem origin = chamada direta (curl, etc)
++        for allowed in ALLOWED_ORIGINS:
++            if origin.startswith(allowed):
++                return True
++        return False
++
++    def _cors_headers(self):
++        """Adiciona headers CORS restritos"""
++        origin = self.headers.get('Origin', 'http://127.0.0.1')
++        for allowed in ALLOWED_ORIGINS:
++            if origin.startswith(allowed):
++                self.send_header('Access-Control-Allow-Origin', origin)
++                return
++        self.send_header('Access-Control-Allow-Origin', 'http://127.0.0.1')
++
+     def do_POST(self):
+         """Processa requisicao POST (RPC)"""
++        if not self._check_origin():
++            self.send_response(403)
++            self.end_headers()
++            self.wfile.write(b'{"error": "Forbidden origin"}')
++            return
++
+         content_length = int(self.headers.get('Content-Length', 0))
+         body = self.rfile.read(content_length)
+@@ -129,7 +149,7 @@
+             self.send_response(200)
+             self.send_header('Content-Type', 'application/json')
+             self.send_header('Content-Length', len(response_body))
+-            self.send_header('Access-Control-Allow-Origin', '*')
++            self._cors_headers()
+             self.end_headers()
+             self.wfile.write(response_body)
+
+@@ -145,7 +165,7 @@
+     def do_OPTIONS(self):
+         """CORS preflight"""
+         self.send_response(200)
+-        self.send_header('Access-Control-Allow-Origin', '*')
++        self._cors_headers()
+         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+         self.end_headers()

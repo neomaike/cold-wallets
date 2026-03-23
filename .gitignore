@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.ruff_cache/
+
+# Chaves privadas e dados sensiveis - NUNCA commitar
+cold_wallets/generated/
+cold_wallets/signed_transactions/
+cold_wallets/hot_disposable/address_pool/
+cold_wallets/hot_disposable/logs/
+cold_wallets/tx_data/
+cold_wallets/broadcast_logs/
+
+# Logs
+*.log
+proxy_log.txt
+
+# Ambiente
+.env
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# AI assistant config
+CLAUDE.md
+.claude/
+
+# RPC / Helios (private-evm-rpc integrado)
+rpc/helios/config.toml
+rpc/helios/data/
+rpc/tor/hidden_service/
+rpc/reverse-proxy/certs/
+rpc/reverse-proxy/logs/
+rpc/wireguard/*.key
+rpc/wireguard/*.conf
+!rpc/wireguard/*.example
+rpc/l2-templates/*/data/
+rpc/backups/
+*.key
+*.pem
+*.p12
+*.pfx
+docker-compose.override.yml
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

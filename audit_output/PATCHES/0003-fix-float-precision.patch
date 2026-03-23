@@ -1,0 +1,72 @@
+# PATCH 0003: Substituir float por Decimal para valores monetarios
+# Arquivos: sign_eth.py, enviar_btc.py, enviar_eth.py, sweep_to_cold.py
+# Motivo: float(0.1) * 10**18 = 99999999999999984 (perde 16 wei)
+# Teste: Converter 0.1 ETH e verificar que resulta em exatamente 100000000000000000 wei
+# Severidade: Major | Prioridade: P1
+
+--- a/cold_wallets/sign_eth.py
++++ b/cold_wallets/sign_eth.py
+@@ -1,5 +1,6 @@
+ import json
+ import sys
++from decimal import Decimal, InvalidOperation
+ from datetime import datetime
+ from pathlib import Path
+ from eth_account import Account
+@@ -35,9 +36,16 @@
+     private_key = input("Private Key (hex): ").strip()
+     to = input("Endereco destino (0x...): ").strip()
+-    value_eth = float(input("Valor em ETH: "))
++    value_input = input("Valor em ETH: ").strip()
++    try:
++        value_eth = Decimal(value_input)
++    except InvalidOperation:
++        print(f"[ERRO] Valor invalido: {value_input}")
++        sys.exit(1)
+     nonce = int(input("Nonce: "))
+     gas = int(input("Gas limit [21000]: ") or "21000")
+-    gas_price_gwei = float(input("Gas price (Gwei) [20]: ") or "20")
++    gas_price_gwei = Decimal(input("Gas price (Gwei) [20]: ") or "20")
+
+     return {
+         'private_key': private_key,
+         'to': to,
+-        'value_wei': int(value_eth * 10**18),
++        'value_wei': int(value_eth * Decimal(10**18)),
+         'nonce': nonce,
+         'gas': gas,
+-        'gas_price_wei': int(gas_price_gwei * 10**9)
++        'gas_price_wei': int(gas_price_gwei * Decimal(10**9))
+     }
+
+--- a/cold_wallets/enviar_btc.py
++++ b/cold_wallets/enviar_btc.py
+@@ -185,8 +186,12 @@
+     if valor_input == "tudo":
+         send_sats = total_sats - fee_sats
+     else:
+-        send_btc = float(valor_input)
+-        send_sats = int(send_btc * 100_000_000)
++        from decimal import Decimal
++        try:
++            send_btc = Decimal(valor_input)
++        except Exception:
++            print("[ERRO] Valor invalido")
++            return
++        send_sats = int(send_btc * Decimal(100_000_000))
+
+--- a/cold_wallets/enviar_eth.py
++++ b/cold_wallets/enviar_eth.py
+@@ -194,8 +195,12 @@
+     if valor_input == "tudo":
+         send_wei = balance_wei - gas_cost_wei
+     else:
+-        send_eth = float(valor_input)
+-        send_wei = int(send_eth * 10**18)
++        from decimal import Decimal
++        try:
++            send_eth = Decimal(valor_input)
++        except Exception:
++            print("[ERRO] Valor invalido")
++            return
++        send_wei = int(send_eth * Decimal(10**18))

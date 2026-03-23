@@ -1,0 +1,51 @@
+# WireGuard Server Configuration (Your PC)
+# Copy to wg0.conf and fill in the keys
+
+[Interface]
+# Server private key (from server_private.key)
+# NEVER share this key
+PrivateKey = REPLACE_WITH_SERVER_PRIVATE_KEY
+
+# VPN subnet - server gets .1
+Address = 10.0.0.1/24
+
+# UDP port to listen on
+# Must be forwarded on router if accessing from internet
+ListenPort = 51820
+
+# Optional: run script when tunnel comes up
+# PostUp = netsh advfirewall firewall add rule name="WireGuard RPC" dir=in action=allow protocol=tcp localport=8545 remoteip=10.0.0.0/24
+# PostDown = netsh advfirewall firewall delete rule name="WireGuard RPC"
+
+# Save config on wg-quick down (preserves runtime changes)
+SaveConfig = false
+
+# =============================================================================
+# PEERS - Add one [Peer] section for each device that needs access
+# =============================================================================
+
+[Peer]
+# Peer 1: Your phone/laptop
+# Public key from client (client_public.key)
+PublicKey = REPLACE_WITH_CLIENT_PUBLIC_KEY
+
+# IP assigned to this peer
+AllowedIPs = 10.0.0.2/32
+
+# Optional: Pre-shared key for additional security
+# Generate with: wg genpsk
+# PresharedKey = REPLACE_WITH_PRESHARED_KEY
+
+# =============================================================================
+# Additional peers (uncomment and configure as needed)
+# =============================================================================
+
+# [Peer]
+# # Peer 2: Second device
+# PublicKey = REPLACE_WITH_CLIENT2_PUBLIC_KEY
+# AllowedIPs = 10.0.0.3/32
+
+# [Peer]
+# # Peer 3: Third device
+# PublicKey = REPLACE_WITH_CLIENT3_PUBLIC_KEY
+# AllowedIPs = 10.0.0.4/32

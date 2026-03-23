@@ -1,0 +1,79 @@
+# Tor Hidden Service for Private RPC Access
+# Exposes your local RPC as a .onion hidden service
+
+version: "3.8"
+
+services:
+  tor:
+    container_name: tor-hidden-service
+    image: osminogin/tor-simple:0.4.8
+    restart: unless-stopped
+
+    # Mount custom torrc and hidden service directory
+    volumes:
+      - ./torrc:/etc/tor/torrc:ro
+      - ./hidden_service:/var/lib/tor/hidden_service
+
+    # No ports exposed to host - Tor handles everything internally
+    # The hidden service is only accessible via .onion address
+
+    # Connect to host network to reach Helios on 127.0.0.1:8545
+    # Alternative: use Docker network and point to helios container
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "9050"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+# =============================================================================
+# ALTERNATIVE: Run Tor with host networking
+# =============================================================================
+# If the above doesn't work, try this configuration:
+#
+#   tor:
+#     container_name: tor-hidden-service
+#     image: osminogin/tor-simple:0.4.8
+#     network_mode: host
+#     volumes:
+#       - ./torrc:/etc/tor/torrc:ro
+#       - ./hidden_service:/var/lib/tor/hidden_service
+#
+# With host networking, Tor can directly access 127.0.0.1:8545
+
+# =============================================================================
+# NOTES
+# =============================================================================
+#
+# After starting:
+# 1. Wait ~30 seconds for Tor to bootstrap and generate keys
+# 2. Check hidden_service/hostname for your .onion address
+# 3. The address is persistent as long as hidden_service/ folder exists
+#
+# To rotate .onion address:
+# 1. docker compose down
+# 2. Remove hidden_service folder
+# 3. docker compose up -d
+# 4. New address in hidden_service/hostname

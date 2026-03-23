@@ -1,0 +1,5 @@
+# Dependencias minimas para carteiras frias
+eth-account
+bit
+requests[socks]
+PySocks

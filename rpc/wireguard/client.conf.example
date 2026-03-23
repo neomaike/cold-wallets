@@ -1,0 +1,55 @@
+# WireGuard Client Configuration (Remote Device)
+# Use this on your phone/laptop to connect back to your PC
+
+[Interface]
+# Client private key (from client_private.key)
+# NEVER share this key
+PrivateKey = REPLACE_WITH_CLIENT_PRIVATE_KEY
+
+# IP address for this client in the VPN
+Address = 10.0.0.2/24
+
+# DNS servers to use when connected
+# Use privacy-respecting DNS
+DNS = 1.1.1.1, 9.9.9.9
+
+# Optional: Only route VPN traffic, not all internet
+# Leave empty to only route 10.0.0.0/24 through VPN
+# Set to 0.0.0.0/0 to route ALL traffic through VPN (full tunnel)
+
+[Peer]
+# Server public key (from server_public.key on your PC)
+PublicKey = REPLACE_WITH_SERVER_PUBLIC_KEY
+
+# Optional: Pre-shared key (must match server config)
+# PresharedKey = REPLACE_WITH_PRESHARED_KEY
+
+# Your home IP address and WireGuard port
+# Options:
+# 1. Static IP: 203.0.113.50:51820
+# 2. Dynamic DNS: myhome.duckdns.org:51820
+Endpoint = YOUR_HOME_PUBLIC_IP_OR_DOMAIN:51820
+
+# IPs to route through this tunnel
+# 10.0.0.1/32 = Only route traffic to the server IP (split tunnel)
+# 0.0.0.0/0, ::/0 = Route ALL traffic through VPN (full tunnel)
+AllowedIPs = 10.0.0.1/32
+
+# Send keepalive every 25 seconds to maintain NAT mapping
+# Important for mobile devices
+PersistentKeepalive = 25
+
+# =============================================================================
+# USAGE
+# =============================================================================
+#
+# Once connected, access your private RPC at:
+#   http://10.0.0.1:8545
+#
+# MetaMask configuration:
+#   Network Name: Private RPC (Remote)
+#   RPC URL: http://10.0.0.1:8545
+#   Chain ID: 1
+#   Currency Symbol: ETH
+#
+# =============================================================================

@@ -1,0 +1,84 @@
+# Tor Configuration for RPC Hidden Service
+# This file configures Tor to expose your local RPC as a .onion service
+
+# =============================================================================
+# SOCKS PROXY (for Helios to use Tor for outbound connections)
+# =============================================================================
+
+# Listen for SOCKS connections (used by Helios if configured)
+# Restricted to localhost and Docker bridge network only
+SocksPort 0.0.0.0:9050
+
+# Only allow connections from Docker bridge network and localhost
+# Removed 10.0.0.0/8 and 192.168.0.0/16 (unnecessary, reduces attack surface)
+SocksPolicy accept 127.0.0.0/8
+SocksPolicy accept 172.16.0.0/12
+SocksPolicy reject *
+
+# =============================================================================
+# HIDDEN SERVICE CONFIGURATION
+# =============================================================================
+
+# Directory to store hidden service keys and hostname
+# This is mounted from the host to persist the .onion address
+HiddenServiceDir /var/lib/tor/hidden_service/
+
+# Map .onion:8545 to local RPC
+# host.docker.internal resolves to the Docker host (your PC)
+HiddenServicePort 8545 host.docker.internal:8545
+
+# Version 3 onion addresses (more secure, longer addresses)
+HiddenServiceVersion 3
+
+# =============================================================================
+# SECURITY SETTINGS
+# =============================================================================
+
+# Run as non-root user inside container
+User tor
+
+# Control port disabled (do NOT add ControlPort - "ControlPort 0" may open random port)
+
+# Log level (notice is default, can use info or debug for troubleshooting)
+Log notice stdout
+
+# =============================================================================
+# OPTIONAL: CLIENT AUTHORIZATION
+# =============================================================================
+# Uncomment to require client authentication
+# This adds an extra security layer - only authorized clients can connect
+
+# HiddenServiceAuthorizeClient stealth client1,client2,client3
+
+# With stealth mode, clients need a special auth cookie to connect
+# The auth cookie is generated in hidden_service/client_keys
+
+# =============================================================================
+# OPTIONAL: ONION BALANCE (for high availability)
+# =============================================================================
+# If running multiple instances for redundancy:
+# HiddenServiceOnionBalanceInstance 1
+
+# =============================================================================
+# PERFORMANCE SETTINGS
+# =============================================================================
+
+# Number of introduction points (default 3, max 10)
+# More = better availability, but more Tor network load
+# HiddenServiceNumIntroductionPoints 3
+
+# =============================================================================
+# NOTES
+# =============================================================================
+#
+# After Tor starts:
+# 1. It will create hidden_service/ directory if it doesn't exist
+# 2. Generate hs_ed25519_secret_key and hs_ed25519_public_key
+# 3. Create hostname file with your .onion address
+#
+# The .onion address is derived from the keys, so:
+# - Backup hidden_service/ folder to preserve your address
+# - Delete hidden_service/ to get a new address
+#
+# Typical .onion address format (v3):
+# abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuv.onion

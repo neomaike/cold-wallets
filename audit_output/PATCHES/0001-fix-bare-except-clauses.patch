@@ -1,0 +1,77 @@
+# PATCH 0001: Substituir bare `except:` por `except Exception:` com logging
+# Arquivos: enviar_btc.py, enviar_eth.py, fetch_tx_data.py, broadcast_tor.py
+# Motivo: bare `except:` captura KeyboardInterrupt e SystemExit, impedindo Ctrl+C
+# Teste: Executar qualquer script e pressionar Ctrl+C durante operacao de rede
+# Severidade: Major | Prioridade: P1
+
+--- a/cold_wallets/enviar_btc.py
++++ b/cold_wallets/enviar_btc.py
+@@ -45,8 +45,9 @@
+             r = session.get("https://check.torproject.org/api/ip", timeout=15)
+             if r.json().get("IsTor"):
+                 print(f"[+] Conectado ao Tor - IP: {r.json().get('IP')}")
+                 return session
+-        except:
++        except Exception as e:
++            print(f"    [-] Tor proxy falhou: {e}")
+             continue
+
+     return None
+@@ -63,8 +64,9 @@
+         try:
+             r = session.get(url, timeout=30)
+             if r.status_code == 200:
+                 return r.json()
+-        except:
++        except Exception as e:
++            print(f"    [-] API falhou ({url}): {e}")
+             continue
+
+     return None
+@@ -75,8 +77,8 @@
+     try:
+         r = session.get("https://mempool.space/api/v1/fees/recommended", timeout=15)
+         if r.status_code == 200:
+             return r.json()
+-    except:
+-        pass
++    except Exception as e:
++        print(f"    [-] Erro buscando taxas: {e}")
+     return {"fastestFee": 20, "halfHourFee": 10, "hourFee": 5}
+
+--- a/cold_wallets/enviar_eth.py
++++ b/cold_wallets/enviar_eth.py
+@@ -51,8 +51,9 @@
+             r = session.get("https://check.torproject.org/api/ip", timeout=15)
+             if r.json().get("IsTor"):
+                 print(f"[+] Conectado ao Tor - IP: {r.json().get('IP')}")
+                 return session
+-        except:
++        except Exception as e:
++            print(f"    [-] Tor proxy falhou: {e}")
+             continue
+
+     return None
+@@ -73,8 +74,9 @@
+                 if "result" in result:
+                     return result["result"]
+-        except:
++        except Exception as e:
++            print(f"    [-] RPC falhou ({rpc}): {e}")
+             continue
+
+     return None
+
+--- a/cold_wallets/tools/fetch_tx_data.py
++++ b/cold_wallets/tools/fetch_tx_data.py
+@@ -40,8 +40,9 @@
+             response = session.get('https://check.torproject.org/api/ip', timeout=30)
+             if response.json().get('IsTor'):
+                 print(f"[+] Conectado ao Tor! IP: {response.json().get('IP')}")
+                 return session
+-        except:
++        except Exception as e:
++            print(f"    [-] Tor proxy falhou: {e}")
+             continue
+
+     return None

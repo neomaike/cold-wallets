@@ -1,0 +1,94 @@
+# PATCH 0002: Adicionar validacao de enderecos ETH e BTC
+# Arquivos: enviar_btc.py, enviar_eth.py, sign_eth.py, sign_btc.py
+# Motivo: Sem validacao, usuario pode enviar fundos para endereco invalido = PERDA TOTAL
+# Teste: Digitar endereco com typo e verificar que o script rejeita
+# Severidade: Critical | Prioridade: P1
+
+# INSTRUCAO: Adicionar estas funcoes de validacao no inicio de cada arquivo
+# ou criar um modulo utils.py compartilhado.
+
+# --- Novo arquivo: cold_wallets/address_validation.py ---
+
+"""
+Validacao de enderecos Bitcoin e Ethereum.
+Previne envio para enderecos invalidos.
+"""
+
+import re
+import hashlib
+
+
+def validate_eth_address(address: str) -> tuple[bool, str]:
+    """Valida endereco Ethereum (formato + checksum EIP-55)."""
+    if not address:
+        return False, "Endereco vazio"
+
+    if not address.startswith("0x"):
+        return False, "Endereco ETH deve comecar com 0x"
+
+    if len(address) != 42:
+        return False, f"Endereco ETH deve ter 42 caracteres (tem {len(address)})"
+
+    if not re.match(r'^0x[0-9a-fA-F]{40}$', address):
+        return False, "Endereco ETH contem caracteres invalidos"
+
+    # Verifica checksum EIP-55 (se nao for tudo minusculo ou maiusculo)
+    addr_hex = address[2:]
+    if addr_hex != addr_hex.lower() and addr_hex != addr_hex.upper():
+        addr_hash = hashlib.sha3_256(addr_hex.lower().encode()).hexdigest()
+        for i, char in enumerate(addr_hex):
+            if char.isalpha():
+                expected_upper = int(addr_hash[i], 16) >= 8
+                if expected_upper and char.islower():
+                    return False, f"Checksum EIP-55 invalido na posicao {i}"
+                if not expected_upper and char.isupper():
+                    return False, f"Checksum EIP-55 invalido na posicao {i}"
+
+    return True, "OK"
+
+
+def validate_btc_address(address: str) -> tuple[bool, str]:
+    """Valida endereco Bitcoin (base58check, bech32)."""
+    if not address:
+        return False, "Endereco vazio"
+
+    # Bech32 (bc1...)
+    if address.startswith("bc1"):
+        if len(address) < 14 or len(address) > 74:
+            return False, f"Endereco bech32 com tamanho invalido ({len(address)})"
+        if not re.match(r'^bc1[a-zA-HJ-NP-Z0-9]{11,71}$', address):
+            return False, "Endereco bech32 contem caracteres invalidos"
+        return True, "OK (bech32)"
+
+    # Base58 (1... ou 3...)
+    if address.startswith("1") or address.startswith("3"):
+        if len(address) < 25 or len(address) > 34:
+            return False, f"Endereco base58 com tamanho invalido ({len(address)})"
+        base58_chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+        for c in address:
+            if c not in base58_chars:
+                return False, f"Caractere invalido em endereco base58: '{c}'"
+        return True, "OK (base58)"
+
+    return False, "Endereco BTC deve comecar com 1, 3, ou bc1"
+
+
+# --- Uso nos scripts existentes (adicionar antes de confirmar envio) ---
+#
+# Em enviar_btc.py, apos coletar dest_address:
+#
+#   from address_validation import validate_btc_address
+#   valid, msg = validate_btc_address(dest_address)
+#   if not valid:
+#       print(f"[ERRO] Endereco invalido: {msg}")
+#       input("\nPressione Enter para sair...")
+#       return
+#
+# Em enviar_eth.py, apos coletar dest_address:
+#
+#   from address_validation import validate_eth_address
+#   valid, msg = validate_eth_address(dest_address)
+#   if not valid:
+#       print(f"[ERRO] Endereco invalido: {msg}")
+#       input("\nPressione Enter para sair...")
+#       return

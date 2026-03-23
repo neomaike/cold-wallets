@@ -1,0 +1,3 @@
+@echo off
+echo Verificando conexao Tor...
+C:\Python314\python.exe "%~dp0check_tor.py"
