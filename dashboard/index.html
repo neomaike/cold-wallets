@@ -17,8 +17,11 @@
   --yellow:#fbbf24;--orange:#f59e0b;
   --purple:#a78bfa;
   --radius:12px;--radius-sm:8px;
+  --sidebar-w:480px;
 }
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh;transition:margin .3s}
+body.sb-open{margin-right:var(--sidebar-w)}
+@media(max-width:900px){:root{--sidebar-w:100vw}body.sb-open{margin-right:0}}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
 /* HEADER */
@@ -27,14 +30,50 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-ap
 .logo{width:32px;height:32px;background:linear-gradient(135deg,var(--accent) 0%,var(--purple) 100%);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff}
 .hdr h1{font-size:17px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
 .hdr h1 b{background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-right{display:flex;align-items:center;gap:10px}
 .pills{display:flex;gap:6px;flex-wrap:wrap}
-.pill{font-size:9px;padding:3px 10px;border-radius:20px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;backdrop-filter:blur(4px)}
+.pill{font-size:9px;padding:3px 10px;border-radius:20px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
 .pill.g{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.25)}
 .pill.r{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2)}
 .pill.y{background:rgba(251,191,36,.08);color:var(--yellow);border:1px solid rgba(251,191,36,.2)}
 
+/* SIDEBAR */
+.sb{position:fixed;top:0;right:0;width:var(--sidebar-w);height:100vh;background:var(--card);border-left:1px solid var(--border);z-index:60;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.sb.open{transform:translateX(0)}
+.sb-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sb-head h3{font-size:14px;font-weight:700}
+.sb-close{width:30px;height:30px;border-radius:8px;border:none;background:var(--card2);color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sb-close:hover{background:var(--red);color:#fff}
+.sb-body{flex:1;overflow-y:auto;padding:16px 20px}
+.sb-foot{padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0}
+.sb-count{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px}
+.sb-count b{color:var(--text)}
+.sb-hist{margin-top:8px;font-size:10px;color:var(--text3);cursor:pointer;text-decoration:underline}
+.sb-hist:hover{color:var(--accent)}
+
+/* WALLET TABS */
+.wc-tabs{display:flex;gap:0;margin-bottom:16px;background:var(--card2);border-radius:var(--radius-sm);padding:3px;border:1px solid var(--border)}
+.wc-tab{flex:1;padding:8px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border-radius:6px;transition:all .2s;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.wc-tab.on{color:#fff}
+.wc-tab.eth.on{background:linear-gradient(135deg,#627eea,#8b5cf6);box-shadow:0 2px 8px rgba(98,126,234,.3)}
+.wc-tab.btc.on{background:linear-gradient(135deg,#f7931a,#f59e0b);box-shadow:0 2px 8px rgba(247,147,26,.3)}
+.wc-panel{display:none}.wc-panel.on{display:block}
+
+.wc{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;transition:border-color .15s}
+.wc:hover{border-color:var(--border2)}
+.wc:last-child{margin-bottom:0}
+.wc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.wc-num{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:3px 10px;border-radius:20px}
+.wc-num.eth{background:rgba(98,126,234,.12);color:#818cf8}
+.wc-num.btc{background:rgba(247,147,26,.12);color:#f59e0b}
+.wc-row{margin-bottom:8px}.wc-row:last-child{margin-bottom:0}
+.wc-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:3px}
+.wc-val{display:flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 9px}
+.wc-val span{flex:1;font-family:'SF Mono',Consolas,monospace;font-size:10.5px;word-break:break-all;color:var(--text)}
+.wc-val input{flex:1;background:none;border:none;font-family:'SF Mono',Consolas,monospace;font-size:10.5px;color:var(--text);padding:0;outline:none;width:0;min-width:0}
+
 /* GRID */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:18px;padding:22px 28px;max-width:1480px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:18px;padding:22px 28px;max-width:1480px;margin:0 auto}
 @media(max-width:500px){.grid{grid-template-columns:1fr;padding:12px}}
 
 /* CARD */
@@ -86,61 +125,19 @@ label{font-size:10px;color:var(--text3);margin-bottom:4px;display:block;font-wei
 .ms.in{background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.12);color:var(--accent)}
 .ms.wn{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.12);color:var(--yellow)}
 
-/* MONO */
+/* MISC */
 .mo{font-family:'SF Mono',Consolas,'Courier New',monospace;font-size:11px;word-break:break-all}
-
-/* WALLET MODAL */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
-.modal-bg.show{opacity:1;pointer-events:auto}
-.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:95%;max-width:680px;max-height:85vh;overflow:hidden;transform:translateY(20px) scale(.97);transition:transform .25s}
-.modal-bg.show .modal{transform:translateY(0) scale(1)}
-.modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.modal-head h3{font-size:15px;font-weight:700}
-.modal-close{width:32px;height:32px;border-radius:8px;border:none;background:var(--card2);color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.modal-close:hover{background:var(--red);color:#fff}
-.modal-body{padding:20px 22px;overflow-y:auto;max-height:calc(85vh - 130px)}
-.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
-
-/* WALLET CARDS */
-.wc-tabs{display:flex;gap:0;margin-bottom:16px;background:var(--card2);border-radius:var(--radius-sm);padding:3px;border:1px solid var(--border)}
-.wc-tab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border-radius:6px;transition:all .2s;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
-.wc-tab.on{color:#fff}
-.wc-tab.eth.on{background:linear-gradient(135deg,#627eea,#8b5cf6);box-shadow:0 2px 8px rgba(98,126,234,.3)}
-.wc-tab.btc.on{background:linear-gradient(135deg,#f7931a,#f59e0b);box-shadow:0 2px 8px rgba(247,147,26,.3)}
-.wc-panel{display:none}.wc-panel.on{display:block}
-
-.wc{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;transition:border-color .15s}
-.wc:hover{border-color:var(--border2)}
-.wc:last-child{margin-bottom:0}
-.wc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.wc-num{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:3px 10px;border-radius:20px}
-.wc-num.eth{background:rgba(98,126,234,.12);color:#818cf8}
-.wc-num.btc{background:rgba(247,147,26,.12);color:#f59e0b}
-
-.wc-row{margin-bottom:10px}
-.wc-row:last-child{margin-bottom:0}
-.wc-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:4px}
-.wc-val{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
-.wc-val span{flex:1;font-family:'SF Mono',Consolas,monospace;font-size:11px;word-break:break-all;color:var(--text)}
-.wc-val input{flex:1;background:none;border:none;font-family:'SF Mono',Consolas,monospace;font-size:11px;color:var(--text);padding:0;outline:none}
-
-/* TABS (disposable) */
 .tabs{display:flex;background:var(--card2);border-radius:var(--radius-sm);padding:3px;border:1px solid var(--border);margin-bottom:12px}
 .tab{flex:1;padding:6px;text-align:center;font-size:11px;font-weight:600;cursor:pointer;border-radius:5px;transition:all .2s;color:var(--text3)}
 .tab.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.2)}
-
-/* ADDRESS LIST */
 .al{max-height:180px;overflow-y:auto}
 .ai{padding:6px 0;border-bottom:1px solid rgba(37,45,56,.4);font-size:11px;display:flex;justify-content:space-between;align-items:center}
 .ai:last-child{border:none}
 .at{font-size:8px;padding:2px 6px;border-radius:4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 .at.btc{background:rgba(247,147,26,.1);color:#f59e0b}.at.eth{background:rgba(98,126,234,.1);color:#818cf8}
-
-/* SPINNER */
 .sp{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--accent);border-radius:50%;animation:sp .6s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .hide{display:none!important}
-
 .foot{text-align:center;padding:20px;color:var(--text3);font-size:10px;letter-spacing:.3px}
 </style>
 </head>
@@ -151,20 +148,21 @@ label{font-size:10px;color:var(--text3);margin-bottom:4px;display:block;font-wei
     <div class="logo">CW</div>
     <h1>Cold <b>Wallets</b></h1>
   </div>
-  <div class="pills" id="pills"></div>
+  <div class="hdr-right">
+    <div class="pills" id="pills"></div>
+    <button class="bt bt-o bt-xs hide" id="sb-toggle" onclick="toggleSidebar()" title="Show generated wallets">Wallets</button>
+  </div>
 </div>
 
-<!-- WALLET GENERATION MODAL -->
-<div class="modal-bg" id="wmodal">
-  <div class="modal">
-    <div class="modal-head">
-      <h3 id="wmodal-title">Generated Wallets</h3>
-      <button class="modal-close" onclick="closeModal()">&times;</button>
-    </div>
-    <div class="modal-body" id="wmodal-body"></div>
-    <div class="modal-foot">
-      <div class="ms wn" style="flex:1;margin:0" id="wmodal-file"></div>
-    </div>
+<!-- SIDEBAR (generated wallets) -->
+<div class="sb" id="sidebar">
+  <div class="sb-head">
+    <h3 id="sb-title">Generated Wallets</h3>
+    <button class="sb-close" onclick="toggleSidebar()">&times;</button>
+  </div>
+  <div class="sb-body" id="sb-body"></div>
+  <div class="sb-foot">
+    <div class="ms wn" style="margin:0;font-size:11px" id="sb-file"></div>
   </div>
 </div>
 
@@ -310,28 +308,28 @@ function ld(b){b.disabled=true;b._t=b.innerHTML;b.innerHTML='<span class="sp"></
 function dn(b){b.disabled=false;b.innerHTML=b._t;}
 function dot(ok){return ok?'<span class="d g"></span>':'<span class="d r"></span>';}
 
-function cpk(txt,b){
-  navigator.clipboard.writeText(txt).then(function(){
-    var o=b.textContent;b.textContent='Copied!';b.style.color='var(--green)';
-    setTimeout(function(){b.textContent=o;b.style.color='';},1200);
-  });
-}
+function cpk(txt,b){navigator.clipboard.writeText(txt).then(function(){var o=b.textContent;b.textContent='Copied!';b.style.color='var(--green)';setTimeout(function(){b.textContent=o;b.style.color='';},1200);});}
 window.cpk=cpk;
 
 function toggleKey(id){var i=document.getElementById(id);i.type=i.type==='password'?'text':'password';var btn=i.parentElement.querySelector('.tk');if(btn)btn.textContent=i.type==='password'?'Show':'Hide';}
 window.toggleKey=toggleKey;
 
-function closeModal(){el('wmodal').classList.remove('show');}
-window.closeModal=closeModal;
+// SIDEBAR
+var _sbOpen=false;
+function toggleSidebar(){
+  _sbOpen=!_sbOpen;
+  el('sidebar').classList.toggle('open',_sbOpen);
+  document.body.classList.toggle('sb-open',_sbOpen);
+}
+window.toggleSidebar=toggleSidebar;
 
 // STATUS
 async function loadSt() {
   try {
     var s = await callApi('status');
-    var p=el('pills');
     var torC=s.tor&&s.tor.connected;
     var depOk=s.deps&&Object.values(s.deps).every(function(v){return v;});
-    p.innerHTML=(torC?'<span class="pill g">Tor</span>':'<span class="pill r">Tor</span>')
+    el('pills').innerHTML=(torC?'<span class="pill g">Tor</span>':'<span class="pill r">Tor</span>')
       +(s.admin?'<span class="pill g">Admin</span>':'<span class="pill y">No Admin</span>')
       +(depOk?'<span class="pill g">Deps</span>':'<span class="pill r">Deps</span>');
 
@@ -343,10 +341,8 @@ async function loadSt() {
     h+='<div class="rw"><span class="l">Python</span><span class="r">'+s.python+'</span></div>';
     if(s.deps){var dl=Object.entries(s.deps).map(function(e){return dot(e[1])+e[0];}).join(' ');h+='<div class="rw"><span class="l">Deps</span><span class="r">'+dl+'</span></div>';}
     el('st-body').innerHTML=h;
-
     el('tor-ctl').classList.toggle('hide',torC===true);
     if(s.disposable){el('du').textContent=s.disposable.unused;el('da').textContent=s.disposable.active;el('df').textContent=s.disposable.funded;el('dp').textContent=s.disposable.spent;}
-
     var rpcOk=s.rpc&&s.rpc.responding;
     var rh='';
     if(rpcOk){rh='<div class="rw"><span class="l">Status</span><span class="r">'+dot(1)+'Port 8545</span></div><div class="rw"><span class="l">Block</span><span class="r">#'+(s.rpc.block?s.rpc.block.toLocaleString():'?')+'</span></div>';}
@@ -356,16 +352,14 @@ async function loadSt() {
   } catch(e) { el('st-body').innerHTML='<div class="ms er">'+e.message+'</div>'; }
 }
 
-// TOR + RPC ACTIONS
 async function torAct(a,b){ld(b);try{var r=await callApi('tor/'+a);setMsg('tor-msg',r.msg,r.ok?'ok':'er');setTimeout(autoRefresh,1000);setTimeout(autoRefresh,3000);}catch(e){setMsg('tor-msg',e.message,'er');}finally{dn(b);}}
 async function rpcAct(a,b){ld(b);try{var r=await callApi('rpc/'+a);setMsg('rpc-msg',r.msg,r.ok?'ok':'er');setTimeout(autoRefresh,1000);setTimeout(autoRefresh,3000);}catch(e){setMsg('rpc-msg',e.message,'er');}finally{dn(b);}}
 
-// WALLET GENERATION (opens modal)
-function wcardHtml(type, idx, addr, key, klbl){
+// WALLET CARD HTML
+function wcHtml(type, idx, addr, key, klbl){
   var id='k'+Math.random().toString(36).slice(2,8);
-  var cls=type==='eth'?'eth':'btc';
   return '<div class="wc">'
-    +'<div class="wc-top"><span class="wc-num '+cls+'">'+type.toUpperCase()+' #'+idx+'</span></div>'
+    +'<div class="wc-top"><span class="wc-num '+type+'">'+type.toUpperCase()+' #'+idx+'</span></div>'
     +'<div class="wc-row"><div class="wc-label">Address</div>'
     +'<div class="wc-val"><span>'+addr+'</span>'
     +'<button class="bt bt-o bt-xs" onclick="cpk(\''+addr+'\',this)">Copy</button></div></div>'
@@ -376,27 +370,32 @@ function wcardHtml(type, idx, addr, key, klbl){
     +'</div>';
 }
 
+// GENERATE WALLETS -> SIDEBAR
 async function genWal(b){
   ld(b);try{
     var r=await callApi('generate-wallets',{count:parseInt(el('gen-n').value)});
     if(r.error){setMsg('gen-r',r.error,'er');return;}
 
-    var ethHtml='';var btcHtml='';
-    r.ethereum.forEach(function(w){ethHtml+=wcardHtml('eth',w.index,w.address,w.private_key,'Private Key (hex)');});
-    r.bitcoin.forEach(function(w){btcHtml+=wcardHtml('btc',w.index,w.address,w.wif,'WIF (Private Key)');});
+    var ethH='';var btcH='';
+    r.ethereum.forEach(function(w){ethH+=wcHtml('eth',w.index,w.address,w.private_key,'Private Key (hex)');});
+    r.bitcoin.forEach(function(w){btcH+=wcHtml('btc',w.index,w.address,w.wif,'WIF (Private Key)');});
 
     var body='<div class="wc-tabs">'
       +'<div class="wc-tab eth on" onclick="switchWTab(\'eth\',this)">Ethereum ('+r.ethereum.length+')</div>'
       +'<div class="wc-tab btc" onclick="switchWTab(\'btc\',this)">Bitcoin ('+r.bitcoin.length+')</div>'
       +'</div>'
-      +'<div class="wc-panel on" id="wp-eth">'+ethHtml+'</div>'
-      +'<div class="wc-panel" id="wp-btc">'+btcHtml+'</div>';
+      +'<div class="wc-panel on" id="wp-eth">'+ethH+'</div>'
+      +'<div class="wc-panel" id="wp-btc">'+btcH+'</div>';
 
-    el('wmodal-body').innerHTML=body;
-    el('wmodal-file').innerHTML='Saved to: <span class="mo">'+r.file+'</span><br>Write down keys and DELETE the file!';
-    el('wmodal-title').textContent='Generated '+r.ethereum.length+' ETH + '+r.bitcoin.length+' BTC Wallets';
-    el('wmodal').classList.add('show');
-    setMsg('gen-r','Wallets generated! Click above to review.','ok');
+    el('sb-body').innerHTML=body;
+    el('sb-file').innerHTML='Saved: <span class="mo">'+r.file+'</span><br>Write down keys, then delete the file.';
+    el('sb-title').textContent=r.ethereum.length+' ETH + '+r.bitcoin.length+' BTC';
+    el('sb-toggle').classList.remove('hide');
+
+    // Open sidebar
+    if(!_sbOpen) toggleSidebar();
+
+    setMsg('gen-r','Wallets generated! See sidebar.','ok');
   }catch(e){setMsg('gen-r',e.message,'er');}finally{dn(b);}
 }
 
@@ -410,13 +409,11 @@ window.switchWTab=switchWTab;
 
 // DISPOSABLE
 async function genDisp(c,n,b){ld(b);try{var r=await callApi('generate-disposable',{crypto:c,count:n});if(r.error){setMsg('dr',r.error,'er');return;}setMsg('dr','Generated '+(r.btc||0)+' BTC + '+(r.eth||0)+' ETH','ok');loadSt();}catch(e){setMsg('dr',e.message,'er');}finally{dn(b);}}
-
 async function dispList(s,tabEl){document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});tabEl.classList.add('on');try{var r=await callApi('disposable/list',{state:s});var items=r[s]||[];el('dl').innerHTML=items.length?items.map(function(a){return '<div class="ai"><span class="mo">'+a.address+'</span><span class="at '+(a.crypto||'')+'">'+a.crypto+'</span></div>';}).join(''):'<div style="padding:10px;color:var(--text3);font-size:11px">No addresses</div>';}catch(e){el('dl').innerHTML='<div class="ms er">'+e.message+'</div>';}}
-
 async function dispGet(c,b){ld(b);try{var r=await callApi('disposable/get-address',{crypto:c});if(r.error){setMsg('dr',r.error,'er');return;}setMsg('dr',r.crypto.toUpperCase()+': <span class="mo">'+r.address+'</span><br>'+r.warning,'ok');loadSt();}catch(e){setMsg('dr',e.message,'er');}finally{dn(b);}}
 
 // SEND BTC
-async function prepBtc(b){ld(b);try{var r=await callApi('prepare-btc',{wif:el('bw').value});if(r.error){var errMsg=r.error;if(r.tested&&r.tested.length){errMsg+='<br><br><span style="font-size:11px;color:var(--text3)">Checked:<br>'+r.tested.map(function(a){return '<span class="mo">'+a+'</span>';}).join('<br>')+'</span>';}setMsg('br',errMsg,'er');el('bi').classList.add('hide');return;}
+async function prepBtc(b){ld(b);try{var r=await callApi('prepare-btc',{wif:el('bw').value});if(r.error){var em=r.error;if(r.tested&&r.tested.length){em+='<br><br><span style="font-size:11px;color:var(--text3)">Checked:<br>'+r.tested.map(function(a){return '<span class="mo">'+a+'</span>';}).join('<br>')+'</span>';}setMsg('br',em,'er');el('bi').classList.add('hide');return;}
   var fee=(r.fees&&r.fees.halfHourFee)?r.fees.halfHourFee:10;
   el('bb').innerHTML='<div class="rw"><span class="l">Address</span><span class="r mo">'+r.address+'</span></div><div class="rw"><span class="l">Type</span><span class="r">'+r.type+'</span></div><div class="rw"><span class="l">Balance</span><span class="r">'+(r.balance_sats/1e8).toFixed(8)+' BTC</span></div><div class="rw"><span class="l">UTXOs</span><span class="r">'+r.utxos+'</span></div><div class="rw"><span class="l">Fee</span><span class="r">'+fee+' sat/vB</span></div>';
   el('bf').value=fee;el('bi').classList.remove('hide');el('br').innerHTML='';
@@ -458,10 +455,7 @@ autoRefresh();
 dispList('active',document.querySelector('.tab.on'));
 setTimeout(autoRefresh,3000);setTimeout(autoRefresh,8000);setInterval(autoRefresh,20000);
 
-// Close modal on backdrop click
-el('wmodal').addEventListener('click',function(e){if(e.target===el('wmodal'))closeModal();});
-// Close modal on Escape
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&_sbOpen)toggleSidebar();});
 
 })();
 </script>
