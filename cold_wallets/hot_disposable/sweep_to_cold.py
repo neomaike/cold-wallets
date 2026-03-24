@@ -73,12 +73,19 @@ def collect_btc_sweep_data(addresses, destination):
                 print("  [ERRO] VOUT e valor devem ser numeros inteiros")
                 continue
 
+            script = input("  scriptPubKey (hex): ").strip()
+            if not script:
+                print("  [ERRO] scriptPubKey obrigatorio!")
+                print("         Busque via blockstream.info/api/tx/<txid>")
+                continue
+
             all_utxos.append({
                 'address': addr['address'],
                 'private_key_wif': addr['private_key_wif'],
                 'txid': txid,
                 'vout': vout,
-                'amount_satoshi': amount
+                'amount_satoshi': amount,
+                'script': script
             })
             total_satoshi += amount
 
@@ -249,7 +256,8 @@ def sign_btc_sweep(sweep_data):
         for u in utxos:
             unspent = Unspent(
                 amount=u['amount_satoshi'],
-                confirmations=6,
+                confirmations=0,
+                script=u['script'],
                 txid=u['txid'],
                 txindex=u['vout']
             )
@@ -386,18 +394,30 @@ def main():
     =====================================================
     """)
 
-    # Valida endereco de destino
+    # Valida endereco de destino por tipo de crypto
     dest = args.destination
-    if dest.startswith("0x") or dest.startswith("0X"):
+    is_eth_dest = dest.startswith("0x") or dest.startswith("0X")
+    is_btc_dest = not is_eth_dest
+
+    if is_eth_dest:
         valid, msg = validate_eth_address(dest)
         if not valid:
             print(f"[ERRO] Endereco ETH destino invalido: {msg}")
             sys.exit(1)
-    else:
+    if is_btc_dest:
         valid, msg = validate_btc_address(dest)
         if not valid:
             print(f"[ERRO] Endereco BTC destino invalido: {msg}")
             sys.exit(1)
+
+    # Restringe crypto ao tipo do endereco de destino
+    if args.crypto is None:
+        if is_eth_dest:
+            args.crypto = 'eth'
+            print("[!] Endereco 0x detectado — sweep apenas ETH")
+        elif is_btc_dest:
+            args.crypto = 'btc'
+            print("[!] Endereco BTC detectado — sweep apenas BTC")
 
     # Verifica admin
     if not args.no_network_control and not require_admin():

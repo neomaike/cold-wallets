@@ -117,12 +117,15 @@ def download_tor(progress_cb=None):
                                filter="data")
             except TypeError:
                 # Python < 3.12: manual safety check
+                safe = []
+                base = str(TOR_DIR.resolve())
                 for member in tar.getmembers():
-                    dest = Path(TOR_DIR / member.name).resolve()
-                    if not str(dest).startswith(
-                            str(TOR_DIR.resolve())):
-                        continue  # Skip path traversal
-                tar.extractall(path=str(TOR_DIR))
+                    dest = str(
+                        Path(TOR_DIR / member.name).resolve())
+                    if dest.startswith(base):
+                        safe.append(member)
+                tar.extractall(path=str(TOR_DIR),
+                               members=safe)
 
         tmp.unlink(missing_ok=True)
 

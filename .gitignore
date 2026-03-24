@@ -31,6 +31,9 @@ venv/
 # Tor runtime (downloaded automatically)
 tools/tor_runtime/
 
+# Dashboard server log
+dashboard/server.log
+
 # AI assistant config
 CLAUDE.md
 .claude/

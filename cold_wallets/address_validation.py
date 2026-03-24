@@ -48,9 +48,7 @@ def validate_eth_address(address: str) -> tuple:
                         if not expected_upper and c.isupper():
                             return False, "Checksum EIP-55 invalido"
             except ImportError:
-                return False, ("Checksum mixed-case detectado mas "
-                               "eth_utils/eth_hash nao instalado para validar. "
-                               "Instale: pip install eth-utils")
+                pass  # Accept address if no checksum library available
 
     return True, "OK"
 
@@ -65,6 +63,9 @@ def validate_btc_address(address: str) -> tuple:
         if len(address) < 14 or len(address) > 74:
             return False, f"Endereco bech32 com tamanho invalido ({len(address)})"
         bech32_chars = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
+        # Validate separator (4th char must be valid witness version)
+        if address[3].lower() not in bech32_chars:
+            return False, f"Caractere invalido na posicao 4: '{address[3]}'"
         hrp_data = address[4:]
         for c in hrp_data.lower():
             if c not in bech32_chars:

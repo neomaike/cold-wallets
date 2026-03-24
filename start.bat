@@ -84,7 +84,7 @@ echo  Press Ctrl+C to stop.
 echo.
 
 :: Start server in background, wait for it, then open browser
-start "Cold Wallets Server" /min "%PYTHON%" -B dashboard\server.py
+start "Cold Wallets Server" /min "%PYTHON%" -B dashboard\server.py 2>dashboard\server.log
 
 :: Wait for server to be ready (max 10s)
 set READY=0

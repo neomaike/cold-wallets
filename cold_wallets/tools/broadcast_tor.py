@@ -60,18 +60,15 @@ BITCOIN_BROADCAST_APIS = [
 
 ETHEREUM_BROADCAST_APIS = [
     {
-        "name": "Etherscan (clearnet via Tor)",
-        "url": "https://api.etherscan.io/api",
-        "method": "POST",
-        "params": {
-            "module": "proxy",
-            "action": "eth_sendRawTransaction"
-        },
-        "body_key": "hex"
-    },
-    {
         "name": "Cloudflare ETH (clearnet via Tor)",
         "url": "https://cloudflare-eth.com",
+        "method": "POST",
+        "content_type": "application/json",
+        "rpc": True
+    },
+    {
+        "name": "PublicNode ETH (clearnet via Tor)",
+        "url": "https://ethereum.publicnode.com",
         "method": "POST",
         "content_type": "application/json",
         "rpc": True

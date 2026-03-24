@@ -328,7 +328,7 @@ def main():
         "raw_transaction": raw_tx,
         "from": address,
         "to": dest_address,
-        "amount_wei": send_wei,
+        "amount_wei": str(send_wei),
         "gas_limit": gas_limit,
         "send_all": True,
         "signed_at": datetime.now().isoformat()

@@ -202,7 +202,7 @@ def api_generate_wallets(data):
     from generate_wallets import (
         generate_ethereum_wallets, generate_bitcoin_wallets)
 
-    count = min(data.get("count", 3), 20)
+    count = max(1, min(data.get("count", 3), 20))
     eth = generate_ethereum_wallets(count)
     btc = generate_bitcoin_wallets(count)
 
@@ -231,7 +231,7 @@ def api_generate_disposable(data):
     from generate_disposable import (
         generate_btc_addresses, generate_eth_addresses, save_addresses)
 
-    count = min(data.get("count", 10), 50)
+    count = max(1, min(data.get("count", 10), 50))
     crypto = data.get("crypto", "both")
     result = {"btc": 0, "eth": 0}
 
