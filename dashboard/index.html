@@ -10,513 +10,336 @@
   --bg:#0d1117;--card:#161b22;--card2:#1c2128;--border:#30363d;
   --text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;
   --green:#3fb950;--red:#f85149;--yellow:#d29922;--orange:#db6d28;
-  --radius:10px;--shadow:0 2px 8px rgba(0,0,0,.3);
+  --radius:10px;
 }
-body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;line-height:1.5;min-height:100vh}
-a{color:var(--accent);text-decoration:none}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh}
 
-.header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
-.header h1{font-size:18px;font-weight:600;letter-spacing:-.5px}
-.header h1 span{color:var(--accent)}
-.badges{display:flex;gap:8px}
-.badge{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.badge.on{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
-.badge.off{background:rgba(248,81,73,.1);color:var(--red);border:1px solid rgba(248,81,73,.2)}
-.badge.warn{background:rgba(210,153,34,.1);color:var(--yellow);border:1px solid rgba(210,153,34,.2)}
+/* Header */
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.hdr h1{font-size:18px;font-weight:700;letter-spacing:-.5px}
+.hdr h1 b{color:var(--accent);font-weight:700}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.pill.g{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.pill.r{background:rgba(248,81,73,.1);color:var(--red);border:1px solid rgba(248,81,73,.2)}
+.pill.y{background:rgba(210,153,34,.1);color:var(--yellow);border:1px solid rgba(210,153,34,.2)}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px;padding:20px 24px;max-width:1400px;margin:0 auto}
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px;padding:20px 24px;max-width:1440px;margin:0 auto}
+@media(max-width:500px){.grid{grid-template-columns:1fr;padding:12px}}
 
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
-.card-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.card-head h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)}
-.card-body{padding:18px}
+/* Card */
+.cd{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cd-h{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.cd-h h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text2)}
+.cd-b{padding:16px}
 
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat{background:var(--card2);border-radius:8px;padding:12px;text-align:center}
-.stat .val{font-size:22px;font-weight:700}
-.stat .lbl{font-size:11px;color:var(--text2);text-transform:uppercase;margin-top:2px}
+/* Rows */
+.rw{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.rw:last-child{border:none}
+.rw .l{color:var(--text2)}.rw .r{font-weight:500;text-align:right;max-width:65%;word-break:break-all}
+.d{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.d.g{background:var(--green)}.d.r{background:var(--red)}
 
-.row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
-.row:last-child{border-bottom:none}
-.row .k{color:var(--text2);font-size:13px}
-.row .v{font-size:13px;font-weight:500}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
-.dot.g{background:var(--green)}.dot.r{background:var(--red)}.dot.y{background:var(--yellow)}
+/* Stats */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.st{background:var(--card2);border-radius:8px;padding:10px;text-align:center}
+.st .n{font-size:20px;font-weight:700}.st .t{font-size:10px;color:var(--text2);text-transform:uppercase;margin-top:2px}
 
-input,select{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;width:100%;outline:none;transition:border-color .2s}
+/* Forms */
+input,select{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;color:var(--text);font-size:13px;width:100%;outline:none}
 input:focus,select:focus{border-color:var(--accent)}
-input::placeholder{color:var(--text2)}
-label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
-.field{margin-bottom:12px}
+input::placeholder{color:#555}
+label{font-size:11px;color:var(--text2);margin-bottom:3px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.fld{margin-bottom:10px}
 
-.btn{padding:10px 18px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;width:100%;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:#4c95e8}
-.btn-green{background:var(--green);color:#fff}
-.btn-green:hover{background:#36a148}
-.btn-danger{background:var(--red);color:#fff}
-.btn-danger:hover{background:#d73a3a}
-.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}
-.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-sm{padding:6px 12px;font-size:12px;width:auto}
-.btn-row{display:flex;gap:8px;margin-top:8px}
+/* Buttons */
+.bt{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.bt:disabled{opacity:.35;cursor:not-allowed}
+.bt-p{background:var(--accent);color:#fff}.bt-p:hover{background:#4c95e8}
+.bt-g{background:var(--green);color:#fff}.bt-g:hover{background:#36a148}
+.bt-d{background:var(--red);color:#fff}.bt-d:hover{background:#d73a3a}
+.bt-o{background:transparent;border:1px solid var(--border);color:var(--text2)}.bt-o:hover{border-color:var(--accent);color:var(--accent)}
+.bt-full{width:100%}
+.brow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 
-.msg{padding:10px 14px;border-radius:6px;font-size:13px;margin-top:12px;line-height:1.4}
-.msg.ok{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.2);color:var(--green)}
-.msg.err{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.2);color:var(--red)}
-.msg.info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.15);color:var(--accent)}
-.msg.warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.2);color:var(--yellow)}
+/* Messages */
+.ms{padding:9px 12px;border-radius:6px;font-size:12px;margin-top:10px;line-height:1.5}
+.ms.ok{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.2);color:var(--green)}
+.ms.er{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.15);color:var(--red)}
+.ms.in{background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.12);color:var(--accent)}
+.ms.wn{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.15);color:var(--yellow)}
 
-.mono{font-family:'SF Mono',Consolas,monospace;font-size:12px;word-break:break-all}
-.addr-list{max-height:200px;overflow-y:auto}
-.addr-item{padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;align-items:center}
-.addr-item:last-child{border:none}
-.addr-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--card2);color:var(--text2);text-transform:uppercase}
+/* Mono */
+.mo{font-family:Consolas,'SF Mono',monospace;font-size:11px;word-break:break-all}
 
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.hidden{display:none!important}
+/* Wallet result cards */
+.wc{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.wc-label{font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:6px}
+.wc-addr{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.wc-addr span{flex:1;font-size:11px;word-break:break-all;font-family:Consolas,monospace;color:var(--text)}
+.wc-key{margin-top:6px}
+.wc-key-label{font-size:10px;color:var(--yellow);font-weight:600;margin-bottom:4px}
+.wc-key-row{display:flex;align-items:center;gap:6px}
+.wc-key-row input{flex:1;font-size:10px;padding:6px 8px;font-family:Consolas,monospace}
+.wc-section{font-size:13px;font-weight:700;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.wc-section.eth{color:var(--accent)}.wc-section.btc{color:var(--orange)}
 
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px}
-.tab{padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
-.tab:hover{color:var(--text)}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab-content{display:none}.tab-content.active{display:block}
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:10px}
+.tab{padding:7px 14px;font-size:12px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent}
+.tab:hover{color:var(--text)}.tab.on{color:var(--accent);border-color:var(--accent)}
 
-.footer{text-align:center;padding:20px;color:var(--text2);font-size:11px}
+/* Address list */
+.al{max-height:180px;overflow-y:auto}
+.ai{padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;display:flex;justify-content:space-between;align-items:center}
+.ai:last-child{border:none}
+.at{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--card2);color:var(--text2);text-transform:uppercase;font-weight:700}
+
+/* Spinner */
+.sp{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.15);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hide{display:none!important}
+
+.foot{text-align:center;padding:18px;color:#444;font-size:10px}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>Cold <span>Wallets</span></h1>
-  <div class="badges" id="badges"></div>
+<div class="hdr">
+  <h1>Cold <b>Wallets</b></h1>
+  <div class="pills" id="pills"></div>
 </div>
 
 <div class="grid">
 
   <!-- STATUS -->
-  <div class="card">
-    <div class="card-head">
-      <h2>System Status</h2>
-      <button class="btn btn-ghost btn-sm" onclick="loadStatus()">Refresh</button>
-    </div>
-    <div class="card-body" id="status-body">
-      <div style="text-align:center;padding:20px;color:var(--text2)"><div class="spinner"></div> Loading...</div>
-    </div>
-    <div id="tor-controls" class="hidden" style="padding:0 18px 18px">
-      <div class="btn-row">
-        <button class="btn btn-green btn-sm" onclick="torAction('start',this)">Start Tor</button>
-        <button class="btn btn-ghost btn-sm" onclick="torAction('stop',this)">Stop Tor</button>
-        <button class="btn btn-ghost btn-sm" onclick="torAction('download',this)">Download Tor</button>
+  <div class="cd">
+    <div class="cd-h"><h2>System Status</h2><button class="bt bt-o" onclick="autoRefresh()">Refresh</button></div>
+    <div class="cd-b" id="st-body"><div style="text-align:center;padding:16px;color:var(--text2)"><span class="sp"></span> Loading...</div></div>
+    <div id="tor-ctl" class="hide" style="padding:0 16px 16px">
+      <div class="brow">
+        <button class="bt bt-g" onclick="torAct('start',this)">Start Tor</button>
+        <button class="bt bt-o" onclick="torAct('stop',this)">Stop Tor</button>
+        <button class="bt bt-o" onclick="torAct('download',this)">Download Tor</button>
       </div>
-      <div id="tor-result"></div>
+      <div id="tor-msg"></div>
     </div>
   </div>
 
-  <!-- GENERATE WALLETS -->
-  <div class="card">
-    <div class="card-head"><h2>Generate Wallets</h2></div>
-    <div class="card-body">
-      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Generate offline cold wallets. Private keys are saved to file only, never displayed here.</p>
-      <div class="field">
+  <!-- GENERATE -->
+  <div class="cd">
+    <div class="cd-h"><h2>Generate Wallets</h2></div>
+    <div class="cd-b">
+      <div class="fld">
         <label>Count per crypto</label>
-        <select id="gen-count"><option>3</option><option>5</option><option>10</option></select>
+        <select id="gen-n"><option>3</option><option>5</option><option>10</option></select>
       </div>
-      <button class="btn btn-primary" onclick="generateWallets(this)">Generate Cold Wallets</button>
-      <div id="gen-result"></div>
+      <button class="bt bt-p bt-full" onclick="genWal(this)">Generate Cold Wallets</button>
+      <div id="gen-r"></div>
     </div>
   </div>
 
-  <!-- DISPOSABLE ADDRESSES -->
-  <div class="card">
-    <div class="card-head"><h2>Disposable Addresses</h2></div>
-    <div class="card-body">
-      <div class="stat-grid" id="disp-stats">
-        <div class="stat"><div class="val" id="d-unused">-</div><div class="lbl">Unused</div></div>
-        <div class="stat"><div class="val" id="d-active">-</div><div class="lbl">Active</div></div>
-        <div class="stat"><div class="val" id="d-funded">-</div><div class="lbl">Funded</div></div>
-        <div class="stat"><div class="val" id="d-spent">-</div><div class="lbl">Spent</div></div>
+  <!-- DISPOSABLE -->
+  <div class="cd">
+    <div class="cd-h"><h2>Disposable Addresses</h2></div>
+    <div class="cd-b">
+      <div class="sg" id="ds">
+        <div class="st"><div class="n" id="du">-</div><div class="t">Unused</div></div>
+        <div class="st"><div class="n" id="da">-</div><div class="t">Active</div></div>
+        <div class="st"><div class="n" id="df">-</div><div class="t">Funded</div></div>
+        <div class="st"><div class="n" id="dp">-</div><div class="t">Spent</div></div>
       </div>
-      <div class="btn-row" style="margin-top:14px">
-        <button class="btn btn-ghost btn-sm" onclick="genDisposable('btc',10,this)">+10 BTC</button>
-        <button class="btn btn-ghost btn-sm" onclick="genDisposable('eth',10,this)">+10 ETH</button>
-        <button class="btn btn-ghost btn-sm" onclick="genDisposable('both',10,this)">+10 Both</button>
+      <div class="brow">
+        <button class="bt bt-o" onclick="genDisp('btc',10,this)">+10 BTC</button>
+        <button class="bt bt-o" onclick="genDisp('eth',10,this)">+10 ETH</button>
+        <button class="bt bt-o" onclick="genDisp('both',10,this)">+10 Both</button>
       </div>
-      <div style="margin-top:14px">
+      <div style="margin-top:12px">
         <div class="tabs">
-          <div class="tab active" onclick="getDispList('active',this)">Active</div>
-          <div class="tab" onclick="getDispList('funded',this)">Funded</div>
-          <div class="tab" onclick="getDispList('unused',this)">Unused</div>
+          <div class="tab on" onclick="dispList('active',this)">Active</div>
+          <div class="tab" onclick="dispList('funded',this)">Funded</div>
+          <div class="tab" onclick="dispList('unused',this)">Unused</div>
         </div>
-        <div class="addr-list" id="disp-list"></div>
+        <div class="al" id="dl"></div>
       </div>
-      <div style="margin-top:10px">
-        <div class="btn-row">
-          <button class="btn btn-ghost btn-sm" onclick="getDispAddr('btc',this)">Get BTC Address</button>
-          <button class="btn btn-ghost btn-sm" onclick="getDispAddr('eth',this)">Get ETH Address</button>
-        </div>
+      <div class="brow">
+        <button class="bt bt-o" onclick="dispGet('btc',this)">Get BTC Addr</button>
+        <button class="bt bt-o" onclick="dispGet('eth',this)">Get ETH Addr</button>
       </div>
-      <div id="disp-result"></div>
+      <div id="dr"></div>
     </div>
   </div>
 
   <!-- SEND BTC -->
-  <div class="card">
-    <div class="card-head"><h2>Send Bitcoin</h2></div>
-    <div class="card-body">
-      <div class="msg warn" style="margin-top:0;margin-bottom:14px">Signing happens ONLINE. For max security, use CLI scripts.</div>
-      <div class="field">
-        <label>Private Key (WIF)</label>
-        <input type="password" id="btc-wif" placeholder="5J... or K... or L...">
+  <div class="cd">
+    <div class="cd-h"><h2>Send Bitcoin</h2></div>
+    <div class="cd-b">
+      <div class="ms wn" style="margin:0 0 12px">Requires Tor. Signing happens online via dashboard.</div>
+      <div class="fld"><label>Private Key (WIF)</label><input type="password" id="bw" placeholder="5J... or K... or L..."></div>
+      <button class="bt bt-o bt-full" onclick="prepBtc(this)">Check Balance</button>
+      <div id="bi" class="hide" style="margin-top:12px">
+        <div id="bb"></div>
+        <div class="fld" style="margin-top:10px"><label>Destination</label><input id="bd" placeholder="bc1q... or 3... or 1..."></div>
+        <div class="fld"><label>Fee Rate (sat/vB)</label><input type="number" id="bf" value="10"></div>
+        <button class="bt bt-d bt-full" onclick="sendBtc(this)">Sign &amp; Broadcast</button>
       </div>
-      <button class="btn btn-ghost" onclick="prepareBtc(this)">Check Balance</button>
-      <div id="btc-info" class="hidden" style="margin-top:14px">
-        <div id="btc-balance-info"></div>
-        <div class="field" style="margin-top:12px">
-          <label>Destination Address</label>
-          <input type="text" id="btc-dest" placeholder="bc1q... or 3... or 1...">
-        </div>
-        <div class="field">
-          <label>Fee Rate (sat/vB)</label>
-          <input type="number" id="btc-fee" value="10">
-        </div>
-        <button class="btn btn-danger" onclick="sendBtc(this)">Sign &amp; Broadcast</button>
-      </div>
-      <div id="btc-result"></div>
+      <div id="br"></div>
     </div>
   </div>
 
   <!-- SEND ETH -->
-  <div class="card">
-    <div class="card-head"><h2>Send Ethereum</h2></div>
-    <div class="card-body">
-      <div class="msg warn" style="margin-top:0;margin-bottom:14px">Signing happens ONLINE. For max security, use CLI scripts.</div>
-      <div class="field">
-        <label>Private Key (hex)</label>
-        <input type="password" id="eth-pk" placeholder="0x...">
+  <div class="cd">
+    <div class="cd-h"><h2>Send Ethereum</h2></div>
+    <div class="cd-b">
+      <div class="ms wn" style="margin:0 0 12px">Requires Tor. Signing happens online via dashboard.</div>
+      <div class="fld"><label>Private Key (hex)</label><input type="password" id="ep" placeholder="0x..."></div>
+      <button class="bt bt-o bt-full" onclick="prepEth(this)">Check Balance</button>
+      <div id="ei" class="hide" style="margin-top:12px">
+        <div id="eb"></div>
+        <div class="fld" style="margin-top:10px"><label>Destination</label><input id="ed" placeholder="0x..."></div>
+        <button class="bt bt-d bt-full" onclick="sendEth(this)">Sign &amp; Broadcast (EIP-1559)</button>
       </div>
-      <button class="btn btn-ghost" onclick="prepareEth(this)">Check Balance</button>
-      <div id="eth-info" class="hidden" style="margin-top:14px">
-        <div id="eth-balance-info"></div>
-        <div class="field" style="margin-top:12px">
-          <label>Destination Address</label>
-          <input type="text" id="eth-dest" placeholder="0x...">
-        </div>
-        <button class="btn btn-danger" onclick="sendEth(this)">Sign &amp; Broadcast (EIP-1559)</button>
-      </div>
-      <div id="eth-result"></div>
+      <div id="er"></div>
     </div>
   </div>
 
-  <!-- RPC STATUS -->
-  <div class="card">
-    <div class="card-head"><h2>RPC Status</h2></div>
-    <div class="card-body" id="rpc-body">
-      <div style="text-align:center;padding:20px;color:var(--text2)">Loading...</div>
-    </div>
+  <!-- RPC -->
+  <div class="cd">
+    <div class="cd-h"><h2>RPC Status</h2></div>
+    <div class="cd-b" id="rpc">Loading...</div>
   </div>
 
 </div>
 
-<div class="footer">Cold Wallets Dashboard &mdash; 127.0.0.1 only &mdash; Keys processed in memory, never stored by dashboard</div>
+<div class="foot">Cold Wallets &mdash; 127.0.0.1 only &mdash; Keys processed in memory</div>
 
 <script>
-async function api(endpoint, data = {}) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 30000);
+async function api(ep, d={}) {
+  const c = new AbortController(), t = setTimeout(() => c.abort(), 30000);
   try {
-    const r = await fetch('/api/' + endpoint, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(data),
-      signal: ctrl.signal
-    });
+    const r = await fetch('/api/'+ep, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d), signal:c.signal});
     return r.json();
-  } finally { clearTimeout(timer); }
+  } finally { clearTimeout(t); }
 }
 
-function $(id) { return document.getElementById(id); }
-function msg(id, text, type = 'info') {
-  $(id).innerHTML = `<div class="msg ${type}">${text}</div>`;
-}
-function loading(btn) {
-  btn.disabled = true;
-  btn._text = btn.innerHTML;
-  btn.innerHTML = '<div class="spinner"></div> Working...';
-}
-function done(btn) {
-  btn.disabled = false;
-  btn.innerHTML = btn._text;
-}
+const $=id=>document.getElementById(id);
+const msg=(id,t,c='in')=>$(id).innerHTML=`<div class="ms ${c}">${t}</div>`;
+function ld(b){b.disabled=true;b._t=b.innerHTML;b.innerHTML='<span class="sp"></span> Working...';}
+function dn(b){b.disabled=false;b.innerHTML=b._t;}
+const dot=ok=>ok?'<span class="d g"></span>':'<span class="d r"></span>';
 
-async function loadStatus() {
-  try {
-    const s = await api('status');
-
-    // Badges
-    const b = $('badges');
-    const torBadge = s.tor?.connected
-      ? `<span class="badge on">Tor</span>`
-      : `<span class="badge off">Tor</span>`;
-    const adminBadge = s.admin
-      ? `<span class="badge on">Admin</span>`
-      : `<span class="badge warn">No Admin</span>`;
-    const depOk = s.deps && Object.values(s.deps).every(v => v);
-    const depBadge = depOk
-      ? `<span class="badge on">Deps OK</span>`
-      : `<span class="badge off">Missing Deps</span>`;
-    b.innerHTML = torBadge + adminBadge + depBadge;
-
-    // Status rows
-    const dot = (ok) => ok ? '<span class="dot g"></span>' : '<span class="dot r"></span>';
-    let html = '';
-    html += `<div class="row"><span class="k">Tor</span><span class="v">${dot(s.tor?.connected)}${s.tor?.connected ? 'Connected (port ' + s.tor.port + ') IP: ' + s.tor.ip : 'Not connected'}</span></div>`;
-    html += `<div class="row"><span class="k">Network</span><span class="v">${dot(s.online)}${s.online ? 'Online' : 'Offline'} (${s.adapters?.length || 0} adapters)</span></div>`;
-    html += `<div class="row"><span class="k">Admin</span><span class="v">${dot(s.admin)}${s.admin ? 'Yes' : 'No'}</span></div>`;
-    html += `<div class="row"><span class="k">Docker</span><span class="v">${dot(s.docker)}${s.docker ? 'Running' : 'Not available'}</span></div>`;
-    html += `<div class="row"><span class="k">Python</span><span class="v">${s.python || '?'}</span></div>`;
-    if (s.deps) {
-      const depList = Object.entries(s.deps).map(([k,v]) => `${dot(v)}${k}`).join(' ');
-      html += `<div class="row"><span class="k">Dependencies</span><span class="v">${depList}</span></div>`;
-    }
-    $('status-body').innerHTML = html;
-
-    // Show Tor controls when not connected
-    const torCtrl = $('tor-controls');
-    if (torCtrl) {
-      torCtrl.classList.toggle('hidden', s.tor?.connected === true);
-    }
-
-    // Disposable stats
-    if (s.disposable) {
-      $('d-unused').textContent = s.disposable.unused;
-      $('d-active').textContent = s.disposable.active;
-      $('d-funded').textContent = s.disposable.funded;
-      $('d-spent').textContent = s.disposable.spent;
-    }
-
-    // RPC
-    let rpcHtml = '';
-    if (s.rpc?.responding) {
-      rpcHtml = `<div class="row"><span class="k">Status</span><span class="v">${dot(true)}Responding on :8545</span></div>`;
-      rpcHtml += `<div class="row"><span class="k">Block</span><span class="v">#${s.rpc.block?.toLocaleString()}</span></div>`;
-    } else {
-      rpcHtml = `<div class="row"><span class="k">Status</span><span class="v">${dot(false)}Not responding on :8545</span></div>`;
-      rpcHtml += `<div class="msg info" style="margin-top:10px">Start RPC: <span class="mono">tools\\start_all_services.bat</span></div>`;
-    }
-    $('rpc-body').innerHTML = rpcHtml;
-
-  } catch (e) {
-    $('status-body').innerHTML = `<div class="msg err">Failed to load status: ${e.message}</div>`;
-  }
-}
-
-async function torAction(action, btn) {
-  loading(btn);
-  try {
-    const r = await api('tor/' + action);
-    msg('tor-result', r.msg, r.ok ? 'ok' : 'err');
-    if (r.ok) setTimeout(autoRefresh, 2000);
-  } catch (e) { msg('tor-result', e.message, 'err'); }
-  finally { done(btn); }
-}
-
-function copyKey(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = 'Copied!';
-    btn.style.color = 'var(--green)';
-    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+function cpk(txt,b){
+  navigator.clipboard.writeText(txt).then(()=>{
+    const o=b.textContent;b.textContent='Copied!';b.style.color='var(--green)';
+    setTimeout(()=>{b.textContent=o;b.style.color=''},1200);
   });
 }
 
-function walletCard(label, address, key, keyLabel) {
-  const id = 'k' + Math.random().toString(36).slice(2,8);
-  return `<div style="background:var(--card2);border-radius:8px;padding:12px;margin-bottom:8px">
-    <div style="font-size:11px;color:var(--text2);margin-bottom:4px">${label}</div>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-      <span class="mono" style="flex:1">${address}</span>
-      <button class="btn btn-ghost btn-sm" style="flex-shrink:0" onclick="copyKey('${address}',this)">Copy</button>
-    </div>
-    <div style="font-size:11px;color:var(--yellow);margin-bottom:4px">${keyLabel}</div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <input type="password" id="${id}" value="${key}" readonly class="mono" style="flex:1;font-size:11px;padding:6px 8px">
-      <button class="btn btn-ghost btn-sm" style="flex-shrink:0" onclick="const i=$('${id}');i.type=i.type==='password'?'text':'password'">Show</button>
-      <button class="btn btn-ghost btn-sm" style="flex-shrink:0" onclick="copyKey('${key}',this)">Copy</button>
+// STATUS
+async function loadSt() {
+  try {
+    const s = await api('status');
+    const p=$('pills');
+    p.innerHTML = (s.tor?.connected?'<span class="pill g">Tor</span>':'<span class="pill r">Tor</span>')
+      + (s.admin?'<span class="pill g">Admin</span>':'<span class="pill y">No Admin</span>')
+      + (s.deps&&Object.values(s.deps).every(v=>v)?'<span class="pill g">Deps</span>':'<span class="pill r">Deps</span>');
+
+    let h='';
+    h+=`<div class="rw"><span class="l">Tor</span><span class="r">${dot(s.tor?.connected)}${s.tor?.connected?'Port '+s.tor.port+' &mdash; '+s.tor.ip:'Not connected'}</span></div>`;
+    h+=`<div class="rw"><span class="l">Network</span><span class="r">${dot(s.online)}${s.online?'Online':'Offline'} (${s.adapters?.length||0} adapters)</span></div>`;
+    h+=`<div class="rw"><span class="l">Admin</span><span class="r">${dot(s.admin)}${s.admin?'Yes':'No'}</span></div>`;
+    h+=`<div class="rw"><span class="l">Docker</span><span class="r">${dot(s.docker)}${s.docker?'Running':'N/A'}</span></div>`;
+    h+=`<div class="rw"><span class="l">Python</span><span class="r">${s.python||'?'}</span></div>`;
+    if(s.deps){const dl=Object.entries(s.deps).map(([k,v])=>`${dot(v)}${k}`).join(' ');h+=`<div class="rw"><span class="l">Deps</span><span class="r">${dl}</span></div>`;}
+    $('st-body').innerHTML=h;
+
+    $('tor-ctl').classList.toggle('hide',s.tor?.connected===true);
+    if(s.disposable){$('du').textContent=s.disposable.unused;$('da').textContent=s.disposable.active;$('df').textContent=s.disposable.funded;$('dp').textContent=s.disposable.spent;}
+
+    let rh='';
+    if(s.rpc?.responding){rh=`<div class="rw"><span class="l">Status</span><span class="r">${dot(1)}Port 8545</span></div><div class="rw"><span class="l">Block</span><span class="r">#${s.rpc.block?.toLocaleString()}</span></div>`;}
+    else{rh=`<div class="rw"><span class="l">Status</span><span class="r">${dot(0)}Not responding</span></div><div class="ms in" style="margin-top:8px">Run <span class="mo">tools\\start_all_services.bat</span></div>`;}
+    $('rpc').innerHTML=rh;
+  } catch(e) { $('st-body').innerHTML=`<div class="ms er">${e.message}</div>`; }
+}
+
+// TOR
+async function torAct(a,b){ld(b);try{const r=await api('tor/'+a);msg('tor-msg',r.msg,r.ok?'ok':'er');if(r.ok)setTimeout(autoRefresh,2000);}catch(e){msg('tor-msg',e.message,'er');}finally{dn(b);}}
+
+// GENERATE WALLETS
+function wcard(lbl,addr,key,klbl){
+  const id='k'+Math.random().toString(36).slice(2,8);
+  return `<div class="wc">
+    <div class="wc-label">${lbl}</div>
+    <div class="wc-addr"><span>${addr}</span><button class="bt bt-o" style="padding:4px 8px;font-size:10px" onclick="cpk('${addr}',this)">Copy</button></div>
+    <div class="wc-key"><div class="wc-key-label">${klbl}</div>
+      <div class="wc-key-row"><input type="password" id="${id}" value="${key}" readonly>
+        <button class="bt bt-o" style="padding:4px 8px;font-size:10px" onclick="const i=$('${id}');i.type=i.type==='password'?'text':'password'">Show</button>
+        <button class="bt bt-o" style="padding:4px 8px;font-size:10px" onclick="cpk('${key}',this)">Copy</button>
+      </div>
     </div>
   </div>`;
 }
 
-async function generateWallets(btn) {
-  loading(btn);
-  try {
-    const count = parseInt($('gen-count').value);
-    const r = await api('generate-wallets', { count });
-    if (r.error) { msg('gen-result', r.error, 'err'); return; }
-
-    let html = '<div class="msg ok" style="margin-bottom:12px">Wallets generated!</div>';
-    html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent)">Ethereum</div>';
-    r.ethereum.forEach(w => {
-      html += walletCard(`ETH Wallet #${w.index}`, w.address, w.private_key, 'Private Key (hex)');
-    });
-    html += '<div style="font-size:13px;font-weight:600;margin:12px 0 8px;color:var(--orange)">Bitcoin</div>';
-    r.bitcoin.forEach(w => {
-      html += walletCard(`BTC Wallet #${w.index} (${w.address.slice(0,4)}...)`, w.address, w.wif, 'WIF (Private Key)');
-    });
-    html += `<div class="msg warn" style="margin-top:12px">
-      Also saved to: <span class="mono">${r.file}</span><br>
-      Write down your keys and DELETE the file!
-    </div>`;
-    $('gen-result').innerHTML = html;
-  } catch (e) {
-    msg('gen-result', e.message, 'err');
-  } finally { done(btn); }
+async function genWal(b){
+  ld(b);try{
+    const r=await api('generate-wallets',{count:parseInt($('gen-n').value)});
+    if(r.error){msg('gen-r',r.error,'er');return;}
+    let h='<div class="ms ok">Wallets generated!</div>';
+    h+='<div class="wc-section eth">Ethereum</div>';
+    r.ethereum.forEach(w=>{h+=wcard('ETH #'+w.index,w.address,w.private_key,'Private Key (hex)');});
+    h+='<div class="wc-section btc">Bitcoin</div>';
+    r.bitcoin.forEach(w=>{h+=wcard('BTC #'+w.index,w.address,w.wif,'WIF (Private Key)');});
+    h+=`<div class="ms wn">Saved to: <span class="mo">${r.file}</span><br>Write down keys and DELETE the file!</div>`;
+    $('gen-r').innerHTML=h;
+  }catch(e){msg('gen-r',e.message,'er');}finally{dn(b);}
 }
 
-async function genDisposable(crypto, count, btn) {
-  loading(btn);
-  try {
-    const r = await api('generate-disposable', { crypto, count });
-    if (r.error) { msg('disp-result', r.error, 'err'); return; }
-    msg('disp-result', `Generated ${r.btc || 0} BTC + ${r.eth || 0} ETH addresses`, 'ok');
-    loadStatus();
-  } catch (e) { msg('disp-result', e.message, 'err'); }
-  finally { done(btn); }
-}
+// DISPOSABLE
+async function genDisp(c,n,b){ld(b);try{const r=await api('generate-disposable',{crypto:c,count:n});if(r.error){msg('dr',r.error,'er');return;}msg('dr',`Generated ${r.btc||0} BTC + ${r.eth||0} ETH`,'ok');loadSt();}catch(e){msg('dr',e.message,'er');}finally{dn(b);}}
 
-async function getDispList(state, tabEl) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  tabEl.classList.add('active');
-  try {
-    const r = await api('disposable/list', { state });
-    const items = r[state] || [];
-    if (!items.length) {
-      $('disp-list').innerHTML = '<div style="padding:10px;color:var(--text2);font-size:12px">No addresses</div>';
-      return;
-    }
-    $('disp-list').innerHTML = items.map(a =>
-      `<div class="addr-item"><span class="mono">${a.address}</span><span class="addr-tag">${a.crypto}</span></div>`
-    ).join('');
-  } catch (e) { $('disp-list').innerHTML = `<div class="msg err">${e.message}</div>`; }
-}
+async function dispList(s,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');try{const r=await api('disposable/list',{state:s});const items=r[s]||[];$('dl').innerHTML=items.length?items.map(a=>`<div class="ai"><span class="mo">${a.address}</span><span class="at">${a.crypto}</span></div>`).join(''):'<div style="padding:8px;color:var(--text2);font-size:11px">No addresses</div>';}catch(e){$('dl').innerHTML=`<div class="ms er">${e.message}</div>`;}}
 
-async function getDispAddr(crypto, btn) {
-  loading(btn);
-  try {
-    const r = await api('disposable/get-address', { crypto });
-    if (r.error) { msg('disp-result', r.error, 'err'); return; }
-    msg('disp-result', `${r.crypto.toUpperCase()}: <span class="mono">${r.address}</span><br>${r.warning}`, 'ok');
-    loadStatus();
-  } catch (e) { msg('disp-result', e.message, 'err'); }
-  finally { done(btn); }
-}
+async function dispGet(c,b){ld(b);try{const r=await api('disposable/get-address',{crypto:c});if(r.error){msg('dr',r.error,'er');return;}msg('dr',`${r.crypto.toUpperCase()}: <span class="mo">${r.address}</span><br>${r.warning}`,'ok');loadSt();}catch(e){msg('dr',e.message,'er');}finally{dn(b);}}
 
-async function prepareBtc(btn) {
-  loading(btn);
-  try {
-    const wif = $('btc-wif').value;
-    const r = await api('prepare-btc', { wif });
-    if (r.error) { msg('btc-result', r.error, 'err'); $('btc-info').classList.add('hidden'); return; }
+// SEND BTC
+async function prepBtc(b){ld(b);try{const r=await api('prepare-btc',{wif:$('bw').value});if(r.error){msg('br',r.error,'er');$('bi').classList.add('hide');return;}
+  $('bb').innerHTML=`<div class="rw"><span class="l">Address</span><span class="r mo">${r.address}</span></div><div class="rw"><span class="l">Type</span><span class="r">${r.type}</span></div><div class="rw"><span class="l">Balance</span><span class="r">${(r.balance_sats/1e8).toFixed(8)} BTC</span></div><div class="rw"><span class="l">UTXOs</span><span class="r">${r.utxos}</span></div><div class="rw"><span class="l">Fee</span><span class="r">${r.fees?.halfHourFee||10} sat/vB</span></div>`;
+  $('bf').value=r.fees?.halfHourFee||10;$('bi').classList.remove('hide');$('br').innerHTML='';
+}catch(e){msg('br',e.message,'er');}finally{dn(b);}}
 
-    const btcVal = (r.balance_sats / 1e8).toFixed(8);
-    $('btc-balance-info').innerHTML = `
-      <div class="row"><span class="k">Address</span><span class="v mono">${r.address}</span></div>
-      <div class="row"><span class="k">Type</span><span class="v">${r.type}</span></div>
-      <div class="row"><span class="k">Balance</span><span class="v">${btcVal} BTC (${r.balance_sats} sat)</span></div>
-      <div class="row"><span class="k">UTXOs</span><span class="v">${r.utxos}</span></div>
-      <div class="row"><span class="k">Recommended Fee</span><span class="v">${r.fees?.halfHourFee || 10} sat/vB</span></div>
-    `;
-    $('btc-fee').value = r.fees?.halfHourFee || 10;
-    $('btc-info').classList.remove('hidden');
-    $('btc-result').innerHTML = '';
-  } catch (e) { msg('btc-result', e.message, 'err'); }
-  finally { done(btn); }
-}
+async function sendBtc(b){if(!confirm('Sign and broadcast BTC? IRREVERSIBLE.'))return;ld(b);try{
+  const r=await api('send-btc',{wif:$('bw').value,destination:$('bd').value,fee_rate:parseInt($('bf').value)});
+  $('bw').value='';if(r.error&&!r.success){msg('br',r.error,'er');return;}
+  if(r.success)msg('br',`Sent ${r.amount_btc} BTC<br>TXID: <span class="mo">${r.txid}</span>`,'ok');
+  else msg('br',`Signed but broadcast failed. Saved: <span class="mo">${r.file}</span>`,'wn');
+  $('bi').classList.add('hide');
+}catch(e){msg('br',e.message,'er');}finally{dn(b);}}
 
-async function sendBtc(btn) {
-  if (!confirm('Sign and broadcast BTC transaction? This is IRREVERSIBLE.')) return;
-  loading(btn);
-  try {
-    const r = await api('send-btc', {
-      wif: $('btc-wif').value,
-      destination: $('btc-dest').value,
-      fee_rate: parseInt($('btc-fee').value)
-    });
-    $('btc-wif').value = '';
-    if (r.error) { msg('btc-result', r.error, 'err'); return; }
-    if (r.success) {
-      msg('btc-result', `Sent ${r.amount_btc} BTC (fee: ${r.fee_btc})<br>TXID: <span class="mono">${r.txid}</span>`, 'ok');
-    } else {
-      msg('btc-result', `Signed but broadcast failed: ${r.error}<br>Saved to: <span class="mono">${r.file}</span>`, 'warn');
-    }
-    $('btc-info').classList.add('hidden');
-  } catch (e) { msg('btc-result', e.message, 'err'); }
-  finally { done(btn); }
-}
+// SEND ETH
+async function prepEth(b){ld(b);try{const r=await api('prepare-eth',{private_key:$('ep').value});if(r.error){msg('er',r.error,'er');$('ei').classList.add('hide');return;}
+  let fl='';if(r.fees){fl=r.fees.legacy?`<div class="rw"><span class="l">Gas Price</span><span class="r">${r.fees.maxFee_gwei} Gwei</span></div>`:`<div class="rw"><span class="l">Base Fee</span><span class="r">${r.fees.baseFee_gwei} Gwei</span></div><div class="rw"><span class="l">Max Fee</span><span class="r">${r.fees.maxFee_gwei} Gwei</span></div><div class="rw"><span class="l">Priority</span><span class="r">${r.fees.priority_gwei} Gwei</span></div>`;}
+  $('eb').innerHTML=`<div class="rw"><span class="l">Address</span><span class="r mo">${r.address}</span></div><div class="rw"><span class="l">Balance</span><span class="r">${parseFloat(r.balance_eth).toFixed(6)} ETH</span></div><div class="rw"><span class="l">Nonce</span><span class="r">${r.nonce}</span></div>${fl}`;
+  $('ei').classList.remove('hide');$('er').innerHTML='';
+}catch(e){msg('er',e.message,'er');}finally{dn(b);}}
 
-async function prepareEth(btn) {
-  loading(btn);
-  try {
-    const pk = $('eth-pk').value;
-    const r = await api('prepare-eth', { private_key: pk });
-    if (r.error) { msg('eth-result', r.error, 'err'); $('eth-info').classList.add('hidden'); return; }
+async function sendEth(b){if(!confirm('Sign and broadcast ETH? IRREVERSIBLE.'))return;ld(b);try{
+  const r=await api('send-eth',{private_key:$('ep').value,destination:$('ed').value});
+  $('ep').value='';if(r.error&&!r.success){msg('er',r.error,'er');return;}
+  if(r.success)msg('er',`Sent ${r.amount_eth} ETH<br>TX: <span class="mo">${r.txid}</span>`,'ok');
+  else msg('er',`Signed but broadcast failed. Saved: <span class="mo">${r.file}</span>`,'wn');
+  $('ei').classList.add('hide');
+}catch(e){msg('er',e.message,'er');}finally{dn(b);}}
 
-    let feeLine = '';
-    if (r.fees) {
-      feeLine = r.fees.legacy
-        ? `<div class="row"><span class="k">Gas Price</span><span class="v">${r.fees.maxFee_gwei} Gwei (legacy)</span></div>`
-        : `<div class="row"><span class="k">Base Fee</span><span class="v">${r.fees.baseFee_gwei} Gwei</span></div>
-           <div class="row"><span class="k">Max Fee</span><span class="v">${r.fees.maxFee_gwei} Gwei</span></div>
-           <div class="row"><span class="k">Priority</span><span class="v">${r.fees.priority_gwei} Gwei</span></div>`;
-    }
-    $('eth-balance-info').innerHTML = `
-      <div class="row"><span class="k">Address</span><span class="v mono">${r.address}</span></div>
-      <div class="row"><span class="k">Balance</span><span class="v">${parseFloat(r.balance_eth).toFixed(6)} ETH</span></div>
-      <div class="row"><span class="k">Nonce</span><span class="v">${r.nonce}</span></div>
-      ${feeLine}
-    `;
-    $('eth-info').classList.remove('hidden');
-    $('eth-result').innerHTML = '';
-  } catch (e) { msg('eth-result', e.message, 'err'); }
-  finally { done(btn); }
-}
-
-async function sendEth(btn) {
-  if (!confirm('Sign and broadcast ETH transaction? This is IRREVERSIBLE.')) return;
-  loading(btn);
-  try {
-    const r = await api('send-eth', {
-      private_key: $('eth-pk').value,
-      destination: $('eth-dest').value
-    });
-    $('eth-pk').value = '';
-    if (r.error) { msg('eth-result', r.error, 'err'); return; }
-    if (r.success) {
-      msg('eth-result', `Sent ${r.amount_eth} ETH<br>TX: <span class="mono">${r.txid}</span>`, 'ok');
-    } else {
-      msg('eth-result', `Signed but broadcast failed: ${r.error}<br>Saved to: <span class="mono">${r.file}</span>`, 'warn');
-    }
-    $('eth-info').classList.add('hidden');
-  } catch (e) { msg('eth-result', e.message, 'err'); }
-  finally { done(btn); }
-}
-
-// Init — load status, retry quickly if still loading
-let _statusLoading = false;
-async function autoRefresh() {
-  if (_statusLoading) return;
-  _statusLoading = true;
-  try { await loadStatus(); } finally { _statusLoading = false; }
-}
+// INIT
+let _busy=false;
+async function autoRefresh(){if(_busy)return;_busy=true;try{await loadSt();}finally{_busy=false;}}
 autoRefresh();
-getDispList('active', document.querySelector('.tab.active'));
-
-// First few refreshes are fast (status cache warming up), then slow down
-setTimeout(autoRefresh, 3000);
-setTimeout(autoRefresh, 8000);
-setInterval(autoRefresh, 20000);
+dispList('active',document.querySelector('.tab.on'));
+setTimeout(autoRefresh,3000);
+setTimeout(autoRefresh,8000);
+setInterval(autoRefresh,20000);
 </script>
 </body>
 </html>

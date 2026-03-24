@@ -64,37 +64,29 @@ def check_import(module_name):
         return False
 
 
-def _tor_probe_thread(port, result_box):
-    """SOCKS probe in isolated thread (can be killed via join timeout)"""
-    try:
-        import requests as req
-        s = req.Session()
-        s.proxies = {
-            "http": f"socks5h://127.0.0.1:{port}",
-            "https": f"socks5h://127.0.0.1:{port}",
-        }
-        r = s.get("https://check.torproject.org/api/ip", timeout=5)
-        d = r.json()
-        if d.get("IsTor"):
-            result_box.append(d.get("IP", "unknown"))
-    except Exception:
-        pass
-
-
 def check_tor():
-    """Check Tor — TCP probe + threaded SOCKS verify with hard 6s cap"""
+    """Check Tor — TCP probe then SOCKS verify"""
     for port in [9150, 9050]:
         if not _tcp_probe("127.0.0.1", port):
             continue
-        result_box = []
-        t = threading.Thread(
-            target=_tor_probe_thread, args=(port, result_box),
-            daemon=True)
-        t.start()
-        t.join(timeout=6)
-        if result_box:
-            return {"connected": True, "ip": result_box[0],
-                    "port": port}
+        # Port is open — verify via SOCKS
+        try:
+            import requests as req
+            s = req.Session()
+            s.proxies = {
+                "http": f"socks5h://127.0.0.1:{port}",
+                "https": f"socks5h://127.0.0.1:{port}",
+            }
+            r = s.get(
+                "https://check.torproject.org/api/ip", timeout=10)
+            d = r.json()
+            if d.get("IsTor"):
+                return {"connected": True,
+                        "ip": d.get("IP", "unknown"),
+                        "port": port}
+        except Exception:
+            # Port open but SOCKS failed — might be starting up
+            return {"connected": False, "ip": None, "port": port}
     return {"connected": False, "ip": None, "port": None}
 
 
