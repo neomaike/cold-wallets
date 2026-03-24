@@ -725,7 +725,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
         try:
             result = handler(data)
-            self._send_json(result)
+            status = 200
+            if isinstance(result, dict):
+                err = result.get("error")
+                # Return 400 only for string errors (not None or False)
+                if err and isinstance(err, str):
+                    status = 400
+            self._send_json(result, status)
         except Exception as e:
             self._send_json({"error": str(e)}, 500)
 
