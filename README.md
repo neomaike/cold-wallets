@@ -170,12 +170,17 @@ For offline signing with internet physically disabled:
 - **Tor runtime** downloaded to `tools/tor_runtime/` — GITIGNORED
 - **Dashboard** bound to `127.0.0.1` only — not accessible from network
 - **HTML escaping** on all server data rendered in dashboard
-- **Atomic file rename** for disposable address claiming (race-safe)
-- **Thread locks** on RPC proxy start/stop
-- **tar extraction** with path traversal filter (Python 3.12+)
-- **PID verification** checks process name before killing
-- All monetary values use `Decimal` (never `float`)
-- Address validation (EIP-55 for ETH, base58/bech32 for BTC) before every send
+- **Atomic file rename** for disposable address claiming (race-safe with retry loop)
+- **Thread locks** on RPC proxy start/stop (`_rpc_lock`)
+- **tar extraction** with path traversal filter (`filter='data'` Python 3.12+, manual member filter for older)
+- **PID verification** checks process name (`tor.exe`) before killing
+- **Sweep destination validation** — auto-detects crypto type from address, prevents BTC-to-ETH mismatch
+- **scriptPubKey mandatory** — BTC sweep requires script field for valid SegWit transactions
+- **Input bounds** — wallet count clamped 1-20, disposable count 1-50
+- **Server error log** — stderr redirected to `dashboard/server.log`
+- All monetary values use `Decimal` (never `float`), wei/sats serialized as strings in JSON
+- Address validation (EIP-55 for ETH, base58/bech32 including 4th char for BTC) before every send
+- ETH broadcast via Cloudflare + PublicNode (no API key required)
 - `except Exception:` only (never bare `except:`)
 - Clipboard errors caught and displayed
 
@@ -188,7 +193,7 @@ For offline signing with internet physically disabled:
 
 ## QA Status
 
-Last tested: 2026-03-24
+Last tested: 2026-03-24 | 25 commits | 2 code reviews completed
 
 | Test | Result |
 |------|--------|
@@ -201,6 +206,10 @@ Last tested: 2026-03-24
 | Module imports (14) | PASS |
 | Error handling (HTTP 400) | PASS |
 | Invalid JSON rejection | PASS |
+| BTC sweep scriptPubKey | PASS (fixed) |
+| Sweep destination validation | PASS (fixed) |
+| Bech32 address validation | PASS (fixed) |
+| Tar extraction safety | PASS (fixed) |
 
 ## Lint
 
