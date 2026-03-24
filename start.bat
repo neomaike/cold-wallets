@@ -83,10 +83,28 @@ echo.
 echo  Press Ctrl+C to stop.
 echo.
 
-start "" "http://127.0.0.1:8080"
+:: Start server in background, wait for it, then open browser
+start "Cold Wallets Server" /min "%PYTHON%" -B dashboard\server.py
 
-"%PYTHON%" dashboard\server.py
+:: Wait for server to be ready (max 10s)
+set READY=0
+for /L %%i in (1,1,20) do (
+    if "!READY!"=="0" (
+        timeout /t 1 /nobreak >nul
+        curl -s -o nul http://127.0.0.1:8080/ >nul 2>&1
+        if not errorlevel 1 set READY=1
+    )
+)
+
+if "!READY!"=="1" (
+    echo  Server ready! Opening browser...
+    start "" "http://127.0.0.1:8080"
+) else (
+    echo  [WARN] Server may not be ready. Open http://127.0.0.1:8080 manually.
+)
 
 echo.
-echo  Dashboard stopped.
+echo  Dashboard running in background window.
+echo  Close the "Cold Wallets Server" window to stop.
+echo.
 pause

@@ -618,30 +618,30 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def do_GET(self):
-        # Block MetaMask /login redirect
-        if self.path in ("/login", "/login/"):
-            self.send_response(302)
-            self.send_header("Location", "/")
-            self.end_headers()
+    def _serve_html(self):
+        if _HTML_CACHE is None:
+            self.send_error(500, "index.html not loaded")
             return
-        if self.path in ("/", "/index.html"):
-            if _HTML_CACHE is None:
-                self.send_error(500, "index.html not loaded")
-                return
-            self.send_response(200)
-            self.send_header(
-                "Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", len(_HTML_CACHE))
-            self.end_headers()
-            self.wfile.write(_HTML_CACHE)
-        elif self.path == "/api/status":
+        self.send_response(200)
+        self.send_header(
+            "Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", len(_HTML_CACHE))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(_HTML_CACHE)
+
+    def do_GET(self):
+        if self.path == "/api/status":
             self._send_json(get_system_status())
         elif self.path == "/favicon.ico":
             self.send_response(204)
             self.end_headers()
-        else:
+        elif self.path.startswith("/api/"):
             self.send_error(404)
+        else:
+            # Serve dashboard on ANY non-API path
+            # (fixes MetaMask /login redirect loop)
+            self._serve_html()
 
     def do_POST(self):
         handler = API_ROUTES.get(self.path)
