@@ -26,7 +26,7 @@ sys.path.insert(0, str(COLD_WALLETS / "tools"))
 sys.path.insert(0, str(TOOLS_DIR))
 
 DASHBOARD_DIR = Path(__file__).parent
-PORT = 8080
+PORT = 8888
 
 # Cache index.html in memory — it never changes at runtime
 _HTML_CACHE = None
@@ -556,6 +556,51 @@ def api_send_eth(data):
     }
 
 
+_rpc_process = None
+
+
+def api_rpc_start(data):
+    """Start the ETH RPC proxy on port 8545 (requires Tor)"""
+    global _rpc_process
+    if _tcp_probe("127.0.0.1", 8545):
+        return {"ok": True, "msg": "RPC already running on port 8545"}
+
+    # Check Tor first
+    tor = check_tor()
+    if not tor["connected"]:
+        return {"ok": False,
+                "msg": "Tor not connected. Start Tor first."}
+
+    try:
+        python = sys.executable
+        proxy_script = str(TOOLS_DIR / "eth_rpc_proxy.py")
+        _rpc_process = subprocess.Popen(
+            [python, "-B", proxy_script],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            creationflags=0x08000000,  # CREATE_NO_WINDOW
+        )
+        # Wait for port to open
+        for _ in range(10):
+            time.sleep(0.5)
+            if _tcp_probe("127.0.0.1", 8545):
+                return {"ok": True,
+                        "msg": "RPC proxy started on port 8545 (via Tor)"}
+        return {"ok": False,
+                "msg": "RPC proxy started but port 8545 not responding"}
+    except Exception as e:
+        return {"ok": False, "msg": f"Failed to start RPC: {e}"}
+
+
+def api_rpc_stop(data):
+    """Stop the managed RPC proxy"""
+    global _rpc_process
+    if _rpc_process and _rpc_process.poll() is None:
+        _rpc_process.terminate()
+        _rpc_process = None
+        return {"ok": True, "msg": "RPC proxy stopped"}
+    return {"ok": True, "msg": "RPC proxy not running (managed)"}
+
+
 def api_tor_start(data):
     from tor_manager import start_tor, download_tor, status as tor_status
     s = tor_status()
@@ -590,6 +635,8 @@ API_ROUTES = {
     "/api/disposable/list": api_disposable_list,
     "/api/disposable/get-address": api_disposable_get,
     "/api/check-tor": lambda d: check_tor(),
+    "/api/rpc/start": api_rpc_start,
+    "/api/rpc/stop": api_rpc_stop,
     "/api/tor/start": api_tor_start,
     "/api/tor/stop": api_tor_stop,
     "/api/tor/download": api_tor_download,
@@ -644,7 +691,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._serve_html()
 
     def do_POST(self):
-        handler = API_ROUTES.get(self.path)
+        path = self.path.split("?")[0]
+        handler = API_ROUTES.get(path)
         if not handler:
             self._send_json({"error": "Not found"}, 404)
             return

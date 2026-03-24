@@ -209,6 +209,13 @@ label{font-size:11px;color:var(--text2);margin-bottom:3px;display:block;font-wei
   <div class="cd">
     <div class="cd-h"><h2>RPC Status</h2></div>
     <div class="cd-b" id="rpc">Loading...</div>
+    <div id="rpc-ctl" class="hide" style="padding:0 16px 16px">
+      <div class="brow">
+        <button class="bt bt-g" onclick="rpcAct('start',this)">Start RPC Proxy</button>
+        <button class="bt bt-o" onclick="rpcAct('stop',this)">Stop</button>
+      </div>
+      <div id="rpc-msg"></div>
+    </div>
   </div>
 
 </div>
@@ -265,15 +272,20 @@ async function loadSt() {
     el('tor-ctl').classList.toggle('hide',torC===true);
     if(s.disposable){el('du').textContent=s.disposable.unused;el('da').textContent=s.disposable.active;el('df').textContent=s.disposable.funded;el('dp').textContent=s.disposable.spent;}
 
+    var rpcOk=s.rpc&&s.rpc.responding;
     var rh='';
-    if(s.rpc&&s.rpc.responding){rh='<div class="rw"><span class="l">Status</span><span class="r">'+dot(1)+'Port 8545</span></div><div class="rw"><span class="l">Block</span><span class="r">#'+(s.rpc.block?s.rpc.block.toLocaleString():'?')+'</span></div>';}
-    else{rh='<div class="rw"><span class="l">Status</span><span class="r">'+dot(0)+'Not responding</span></div><div class="ms in" style="margin-top:8px">Run <span class="mo">tools\\start_all_services.bat</span></div>';}
+    if(rpcOk){rh='<div class="rw"><span class="l">Status</span><span class="r">'+dot(1)+'Port 8545</span></div><div class="rw"><span class="l">Block</span><span class="r">#'+(s.rpc.block?s.rpc.block.toLocaleString():'?')+'</span></div>';}
+    else{rh='<div class="rw"><span class="l">Status</span><span class="r">'+dot(0)+'Not responding on :8545</span></div>';}
     el('rpc').innerHTML=rh;
+    el('rpc-ctl').classList.toggle('hide',rpcOk===true);
   } catch(e) { el('st-body').innerHTML='<div class="ms er">'+e.message+'</div>'; }
 }
 
 // TOR
 async function torAct(a,b){ld(b);try{var r=await callApi('tor/'+a);setMsg('tor-msg',r.msg,r.ok?'ok':'er');if(r.ok)setTimeout(autoRefresh,2000);}catch(e){setMsg('tor-msg',e.message,'er');}finally{dn(b);}}
+
+// RPC
+async function rpcAct(a,b){ld(b);try{var r=await callApi('rpc/'+a);setMsg('rpc-msg',r.msg,r.ok?'ok':'er');if(r.ok)setTimeout(autoRefresh,2000);}catch(e){setMsg('rpc-msg',e.message,'er');}finally{dn(b);}}
 
 // GENERATE WALLETS
 function toggleKey(id){var i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
@@ -345,6 +357,7 @@ async function sendEth(b){if(!confirm('Sign and broadcast ETH? IRREVERSIBLE.'))r
 // Expose to onclick handlers
 window.loadSt=loadSt;
 window.torAct=torAct;
+window.rpcAct=rpcAct;
 window.genWal=genWal;
 window.genDisp=genDisp;
 window.dispList=dispList;

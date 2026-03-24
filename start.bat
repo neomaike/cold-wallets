@@ -74,7 +74,7 @@ echo.
 echo [3/3] Starting dashboard...
 echo.
 echo  ============================================
-echo   Dashboard: http://127.0.0.1:8080
+echo   Dashboard: http://127.0.0.1:8888
 echo  ============================================
 echo.
 echo  Use the dashboard to manage Tor, wallets,
@@ -91,16 +91,16 @@ set READY=0
 for /L %%i in (1,1,20) do (
     if "!READY!"=="0" (
         timeout /t 1 /nobreak >nul
-        curl -s -o nul http://127.0.0.1:8080/ >nul 2>&1
+        curl -s -o nul http://127.0.0.1:8888/ >nul 2>&1
         if not errorlevel 1 set READY=1
     )
 )
 
 if "!READY!"=="1" (
     echo  Server ready! Opening browser...
-    start "" "http://127.0.0.1:8080"
+    start "" "http://127.0.0.1:8888"
 ) else (
-    echo  [WARN] Server may not be ready. Open http://127.0.0.1:8080 manually.
+    echo  [WARN] Server may not be ready. Open http://127.0.0.1:8888 manually.
 )
 
 echo.
