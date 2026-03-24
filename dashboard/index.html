@@ -19,9 +19,8 @@
   --radius:12px;--radius-sm:8px;
   --sidebar-w:480px;
 }
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh;transition:margin .3s}
-body.sb-open{margin-right:var(--sidebar-w)}
-@media(max-width:900px){:root{--sidebar-w:100vw}body.sb-open{margin-right:0}}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh}
+@media(max-width:900px){:root{--sidebar-w:100vw}}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
 /* HEADER */
@@ -37,8 +36,12 @@ body.sb-open{margin-right:var(--sidebar-w)}
 .pill.r{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2)}
 .pill.y{background:rgba(251,191,36,.08);color:var(--yellow);border:1px solid rgba(251,191,36,.2)}
 
+/* SIDEBAR OVERLAY */
+.sb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:55;opacity:0;pointer-events:none;transition:opacity .3s}
+.sb-overlay.open{opacity:1;pointer-events:auto}
+
 /* SIDEBAR */
-.sb{position:fixed;top:0;right:0;width:var(--sidebar-w);height:100vh;background:var(--card);border-left:1px solid var(--border);z-index:60;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.sb{position:fixed;top:0;right:0;width:var(--sidebar-w);height:100vh;background:var(--card);border-left:1px solid var(--border);z-index:60;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.4)}
 .sb.open{transform:translateX(0)}
 .sb-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .sb-head h3{font-size:14px;font-weight:700}
@@ -153,6 +156,9 @@ label{font-size:10px;color:var(--text3);margin-bottom:4px;display:block;font-wei
     <button class="bt bt-o bt-xs hide" id="sb-toggle" onclick="toggleSidebar()" title="Show generated wallets">Wallets</button>
   </div>
 </div>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
 
 <!-- SIDEBAR (generated wallets) -->
 <div class="sb" id="sidebar">
@@ -319,7 +325,7 @@ var _sbOpen=false;
 function toggleSidebar(){
   _sbOpen=!_sbOpen;
   el('sidebar').classList.toggle('open',_sbOpen);
-  document.body.classList.toggle('sb-open',_sbOpen);
+  el('sb-overlay').classList.toggle('open',_sbOpen);
 }
 window.toggleSidebar=toggleSidebar;
 
