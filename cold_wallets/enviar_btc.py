@@ -120,22 +120,56 @@ def fetch_script_pubkey(session, txid, vout):
     return None
 
 
+def _derive_bc1q(public_key):
+    """Derive native segwit (bc1q) address from compressed public key"""
+    import hashlib
+    sha = hashlib.sha256(public_key).digest()
+    h160 = hashlib.new('ripemd160', sha).digest()
+
+    CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+
+    def _polymod(values):
+        GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa,
+               0x3d4233dd, 0x2a1462b3]
+        chk = 1
+        for v in values:
+            b = (chk >> 25)
+            chk = (chk & 0x1ffffff) << 5 ^ v
+            for i in range(5):
+                chk ^= GEN[i] if ((b >> i) & 1) else 0
+        return chk
+
+    def _checksum(hrp, data):
+        vals = ([ord(x) >> 5 for x in hrp] + [0]
+                + [ord(x) & 31 for x in hrp] + data)
+        polymod = _polymod(vals + [0, 0, 0, 0, 0, 0]) ^ 1
+        return [(polymod >> 5 * (5 - i)) & 31 for i in range(6)]
+
+    # Convert 8-bit to 5-bit
+    acc, bits, prog = 0, 0, []
+    for byte in h160:
+        acc = (acc << 8) | byte
+        bits += 8
+        while bits >= 5:
+            bits -= 5
+            prog.append((acc >> bits) & 31)
+    if bits:
+        prog.append((acc << (5 - bits)) & 31)
+
+    data = [0] + prog  # witness version 0
+    cs = _checksum('bc', data)
+    return 'bc' + '1' + ''.join(CHARSET[d] for d in data + cs)
+
+
 def find_funded_address(session, key):
     """Busca UTXOs em todos os formatos de endereco da chave"""
+    # Derive bc1q (native segwit) manually
+    bc1_addr = _derive_bc1q(key.public_key)
     candidates = [
-        (key.segwit_address, "np2wkh"),   # 3... (P2SH-wrapped SegWit)
-        (key.address, "p2pkh"),            # 1... (legacy)
+        (bc1_addr, "p2wkh"),               # bc1q... (Native SegWit)
+        (key.segwit_address, "np2wkh"),     # 3... (P2SH-wrapped SegWit)
+        (key.address, "p2pkh"),             # 1... (legacy)
     ]
-    # Native SegWit (bc1q) se disponivel na lib bit
-    if hasattr(key, 'segwit_address_native'):
-        candidates.insert(0, (key.segwit_address_native, "p2wkh"))
-    else:
-        try:
-            from bit.format import public_key_to_segwit_address
-            bc1_addr = public_key_to_segwit_address(key.public_key)
-            candidates.insert(0, (bc1_addr, "p2wkh"))
-        except (ImportError, Exception):
-            pass  # lib bit sem suporte nativo bc1q
     for address, addr_type in candidates:
         utxos = fetch_utxos(session, address)
         if utxos:
@@ -232,8 +266,10 @@ def main():
     address, addr_type, utxos = find_funded_address(session, key)
 
     if not utxos:
+        bc1 = _derive_bc1q(key.public_key)
         print("[!] Nenhum saldo encontrado em nenhum formato de endereco")
-        print(f"    Testados: {key.segwit_address} (np2wkh), {key.address} (p2pkh)")
+        print(f"    Testados: {bc1} (bc1q), "
+              f"{key.segwit_address} (3...), {key.address} (1...)")
         input("\nPressione Enter para sair...")
         return
 

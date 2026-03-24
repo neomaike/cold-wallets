@@ -313,7 +313,7 @@ async function dispList(s,tabEl){document.querySelectorAll('.tab').forEach(funct
 async function dispGet(c,b){ld(b);try{var r=await callApi('disposable/get-address',{crypto:c});if(r.error){setMsg('dr',r.error,'er');return;}setMsg('dr',r.crypto.toUpperCase()+': <span class="mo">'+r.address+'</span><br>'+r.warning,'ok');loadSt();}catch(e){setMsg('dr',e.message,'er');}finally{dn(b);}}
 
 // SEND BTC
-async function prepBtc(b){ld(b);try{var r=await callApi('prepare-btc',{wif:el('bw').value});if(r.error){setMsg('br',r.error,'er');el('bi').classList.add('hide');return;}
+async function prepBtc(b){ld(b);try{var r=await callApi('prepare-btc',{wif:el('bw').value});if(r.error){var errMsg=r.error;if(r.tested&&r.tested.length){errMsg+='<br><br><span style="font-size:11px;color:var(--text2)">Addresses checked:<br>'+r.tested.map(function(a){return '<span class="mo">'+a+'</span>';}).join('<br>')+'</span>';}setMsg('br',errMsg,'er');el('bi').classList.add('hide');return;}
   var fee=r.fees&&r.fees.halfHourFee?r.fees.halfHourFee:10;
   el('bb').innerHTML='<div class="rw"><span class="l">Address</span><span class="r mo">'+r.address+'</span></div><div class="rw"><span class="l">Type</span><span class="r">'+r.type+'</span></div><div class="rw"><span class="l">Balance</span><span class="r">'+(r.balance_sats/1e8).toFixed(8)+' BTC</span></div><div class="rw"><span class="l">UTXOs</span><span class="r">'+r.utxos+'</span></div><div class="rw"><span class="l">Fee</span><span class="r">'+fee+' sat/vB</span></div>';
   el('bf').value=fee;el('bi').classList.remove('hide');el('br').innerHTML='';

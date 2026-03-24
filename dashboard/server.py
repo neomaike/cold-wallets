@@ -335,8 +335,10 @@ def api_prepare_btc(data):
 
     address, addr_type, utxos = find_funded_address(session, key)
     if not utxos:
+        from enviar_btc import _derive_bc1q
+        bc1 = _derive_bc1q(key.public_key)
         return {"error": "No balance found", "tested": [
-            key.segwit_address, key.address]}
+            bc1, key.segwit_address, key.address]}
 
     total_sats = sum(u.get("value", 0) for u in utxos)
     fees = fetch_fee_rates(session)
@@ -617,6 +619,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        # Block MetaMask /login redirect
+        if self.path in ("/login", "/login/"):
+            self.send_response(302)
+            self.send_header("Location", "/")
+            self.end_headers()
+            return
         if self.path in ("/", "/index.html"):
             if _HTML_CACHE is None:
                 self.send_error(500, "index.html not loaded")
