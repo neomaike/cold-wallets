@@ -629,6 +629,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.wfile.write(_HTML_CACHE)
         elif self.path == "/api/status":
             self._send_json(get_system_status())
+        elif self.path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
         else:
             self.send_error(404)
 

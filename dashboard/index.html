@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1f512;</text></svg>">
 <title>Cold Wallets</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -215,131 +216,155 @@ label{font-size:11px;color:var(--text2);margin-bottom:3px;display:block;font-wei
 <div class="foot">Cold Wallets &mdash; 127.0.0.1 only &mdash; Keys processed in memory</div>
 
 <script>
-async function api(ep, d={}) {
-  const c = new AbortController(), t = setTimeout(() => c.abort(), 30000);
-  try {
-    const r = await fetch('/api/'+ep, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d), signal:c.signal});
-    return r.json();
-  } finally { clearTimeout(t); }
+(function(){
+"use strict";
+
+function callApi(ep, d) {
+  d = d || {};
+  var c = new AbortController();
+  var timer = setTimeout(function(){ c.abort(); }, 30000);
+  return fetch('/api/'+ep, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d), signal:c.signal})
+    .then(function(r){ return r.json(); })
+    .finally(function(){ clearTimeout(timer); });
 }
 
-const $=id=>document.getElementById(id);
-const msg=(id,t,c='in')=>$(id).innerHTML=`<div class="ms ${c}">${t}</div>`;
+function el(id){ return document.getElementById(id); }
+function setMsg(id,t,c){ c=c||'in'; el(id).innerHTML='<div class="ms '+c+'">'+t+'</div>'; }
 function ld(b){b.disabled=true;b._t=b.innerHTML;b.innerHTML='<span class="sp"></span> Working...';}
 function dn(b){b.disabled=false;b.innerHTML=b._t;}
-const dot=ok=>ok?'<span class="d g"></span>':'<span class="d r"></span>';
+function dot(ok){return ok?'<span class="d g"></span>':'<span class="d r"></span>';}
 
 function cpk(txt,b){
-  navigator.clipboard.writeText(txt).then(()=>{
-    const o=b.textContent;b.textContent='Copied!';b.style.color='var(--green)';
-    setTimeout(()=>{b.textContent=o;b.style.color=''},1200);
+  navigator.clipboard.writeText(txt).then(function(){
+    var o=b.textContent;b.textContent='Copied!';b.style.color='var(--green)';
+    setTimeout(function(){b.textContent=o;b.style.color='';},1200);
   });
 }
+window.cpk=cpk;
 
 // STATUS
 async function loadSt() {
   try {
-    const s = await api('status');
-    const p=$('pills');
-    p.innerHTML = (s.tor?.connected?'<span class="pill g">Tor</span>':'<span class="pill r">Tor</span>')
-      + (s.admin?'<span class="pill g">Admin</span>':'<span class="pill y">No Admin</span>')
-      + (s.deps&&Object.values(s.deps).every(v=>v)?'<span class="pill g">Deps</span>':'<span class="pill r">Deps</span>');
+    var s = await callApi('status');
+    var p=el('pills');
+    var torC=s.tor&&s.tor.connected;
+    var depOk=s.deps&&Object.values(s.deps).every(function(v){return v;});
+    p.innerHTML=(torC?'<span class="pill g">Tor</span>':'<span class="pill r">Tor</span>')
+      +(s.admin?'<span class="pill g">Admin</span>':'<span class="pill y">No Admin</span>')
+      +(depOk?'<span class="pill g">Deps</span>':'<span class="pill r">Deps</span>');
 
-    let h='';
-    h+=`<div class="rw"><span class="l">Tor</span><span class="r">${dot(s.tor?.connected)}${s.tor?.connected?'Port '+s.tor.port+' &mdash; '+s.tor.ip:'Not connected'}</span></div>`;
-    h+=`<div class="rw"><span class="l">Network</span><span class="r">${dot(s.online)}${s.online?'Online':'Offline'} (${s.adapters?.length||0} adapters)</span></div>`;
-    h+=`<div class="rw"><span class="l">Admin</span><span class="r">${dot(s.admin)}${s.admin?'Yes':'No'}</span></div>`;
-    h+=`<div class="rw"><span class="l">Docker</span><span class="r">${dot(s.docker)}${s.docker?'Running':'N/A'}</span></div>`;
-    h+=`<div class="rw"><span class="l">Python</span><span class="r">${s.python||'?'}</span></div>`;
-    if(s.deps){const dl=Object.entries(s.deps).map(([k,v])=>`${dot(v)}${k}`).join(' ');h+=`<div class="rw"><span class="l">Deps</span><span class="r">${dl}</span></div>`;}
-    $('st-body').innerHTML=h;
+    var h='';
+    h+='<div class="rw"><span class="l">Tor</span><span class="r">'+dot(torC)+(torC?'Port '+s.tor.port+' &mdash; '+s.tor.ip:'Not connected')+'</span></div>';
+    h+='<div class="rw"><span class="l">Network</span><span class="r">'+dot(s.online)+(s.online?'Online':'Offline')+' ('+(s.adapters?s.adapters.length:0)+' adapters)</span></div>';
+    h+='<div class="rw"><span class="l">Admin</span><span class="r">'+dot(s.admin)+(s.admin?'Yes':'No')+'</span></div>';
+    h+='<div class="rw"><span class="l">Docker</span><span class="r">'+dot(s.docker)+(s.docker?'Running':'N/A')+'</span></div>';
+    h+='<div class="rw"><span class="l">Python</span><span class="r">'+(s.python||'?')+'</span></div>';
+    if(s.deps){var dl=Object.entries(s.deps).map(function(e){return dot(e[1])+e[0];}).join(' ');h+='<div class="rw"><span class="l">Deps</span><span class="r">'+dl+'</span></div>';}
+    el('st-body').innerHTML=h;
 
-    $('tor-ctl').classList.toggle('hide',s.tor?.connected===true);
-    if(s.disposable){$('du').textContent=s.disposable.unused;$('da').textContent=s.disposable.active;$('df').textContent=s.disposable.funded;$('dp').textContent=s.disposable.spent;}
+    el('tor-ctl').classList.toggle('hide',torC===true);
+    if(s.disposable){el('du').textContent=s.disposable.unused;el('da').textContent=s.disposable.active;el('df').textContent=s.disposable.funded;el('dp').textContent=s.disposable.spent;}
 
-    let rh='';
-    if(s.rpc?.responding){rh=`<div class="rw"><span class="l">Status</span><span class="r">${dot(1)}Port 8545</span></div><div class="rw"><span class="l">Block</span><span class="r">#${s.rpc.block?.toLocaleString()}</span></div>`;}
-    else{rh=`<div class="rw"><span class="l">Status</span><span class="r">${dot(0)}Not responding</span></div><div class="ms in" style="margin-top:8px">Run <span class="mo">tools\\start_all_services.bat</span></div>`;}
-    $('rpc').innerHTML=rh;
-  } catch(e) { $('st-body').innerHTML=`<div class="ms er">${e.message}</div>`; }
+    var rh='';
+    if(s.rpc&&s.rpc.responding){rh='<div class="rw"><span class="l">Status</span><span class="r">'+dot(1)+'Port 8545</span></div><div class="rw"><span class="l">Block</span><span class="r">#'+(s.rpc.block?s.rpc.block.toLocaleString():'?')+'</span></div>';}
+    else{rh='<div class="rw"><span class="l">Status</span><span class="r">'+dot(0)+'Not responding</span></div><div class="ms in" style="margin-top:8px">Run <span class="mo">tools\\start_all_services.bat</span></div>';}
+    el('rpc').innerHTML=rh;
+  } catch(e) { el('st-body').innerHTML='<div class="ms er">'+e.message+'</div>'; }
 }
 
 // TOR
-async function torAct(a,b){ld(b);try{const r=await api('tor/'+a);msg('tor-msg',r.msg,r.ok?'ok':'er');if(r.ok)setTimeout(autoRefresh,2000);}catch(e){msg('tor-msg',e.message,'er');}finally{dn(b);}}
+async function torAct(a,b){ld(b);try{var r=await callApi('tor/'+a);setMsg('tor-msg',r.msg,r.ok?'ok':'er');if(r.ok)setTimeout(autoRefresh,2000);}catch(e){setMsg('tor-msg',e.message,'er');}finally{dn(b);}}
 
 // GENERATE WALLETS
+function toggleKey(id){var i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
+window.toggleKey=toggleKey;
+
 function wcard(lbl,addr,key,klbl){
-  const id='k'+Math.random().toString(36).slice(2,8);
-  return `<div class="wc">
-    <div class="wc-label">${lbl}</div>
-    <div class="wc-addr"><span>${addr}</span><button class="bt bt-o" style="padding:4px 8px;font-size:10px" onclick="cpk('${addr}',this)">Copy</button></div>
-    <div class="wc-key"><div class="wc-key-label">${klbl}</div>
-      <div class="wc-key-row"><input type="password" id="${id}" value="${key}" readonly>
-        <button class="bt bt-o" style="padding:4px 8px;font-size:10px" onclick="const i=$('${id}');i.type=i.type==='password'?'text':'password'">Show</button>
-        <button class="bt bt-o" style="padding:4px 8px;font-size:10px" onclick="cpk('${key}',this)">Copy</button>
-      </div>
-    </div>
-  </div>`;
+  var id='k'+Math.random().toString(36).slice(2,8);
+  return '<div class="wc">'
+    +'<div class="wc-label">'+lbl+'</div>'
+    +'<div class="wc-addr"><span>'+addr+'</span><button class="bt bt-o" style="padding:4px 8px;font-size:10px" onclick="cpk(\''+addr+'\',this)">Copy</button></div>'
+    +'<div class="wc-key"><div class="wc-key-label">'+klbl+'</div>'
+    +'<div class="wc-key-row"><input type="password" id="'+id+'" value="'+key+'" readonly>'
+    +'<button class="bt bt-o" style="padding:4px 8px;font-size:10px" onclick="toggleKey(\''+id+'\')">Show</button>'
+    +'<button class="bt bt-o" style="padding:4px 8px;font-size:10px" onclick="cpk(\''+key+'\',this)">Copy</button>'
+    +'</div></div></div>';
 }
 
 async function genWal(b){
   ld(b);try{
-    const r=await api('generate-wallets',{count:parseInt($('gen-n').value)});
-    if(r.error){msg('gen-r',r.error,'er');return;}
-    let h='<div class="ms ok">Wallets generated!</div>';
+    var r=await callApi('generate-wallets',{count:parseInt(el('gen-n').value)});
+    if(r.error){setMsg('gen-r',r.error,'er');return;}
+    var h='<div class="ms ok">Wallets generated!</div>';
     h+='<div class="wc-section eth">Ethereum</div>';
-    r.ethereum.forEach(w=>{h+=wcard('ETH #'+w.index,w.address,w.private_key,'Private Key (hex)');});
+    r.ethereum.forEach(function(w){h+=wcard('ETH #'+w.index,w.address,w.private_key,'Private Key (hex)');});
     h+='<div class="wc-section btc">Bitcoin</div>';
-    r.bitcoin.forEach(w=>{h+=wcard('BTC #'+w.index,w.address,w.wif,'WIF (Private Key)');});
-    h+=`<div class="ms wn">Saved to: <span class="mo">${r.file}</span><br>Write down keys and DELETE the file!</div>`;
-    $('gen-r').innerHTML=h;
-  }catch(e){msg('gen-r',e.message,'er');}finally{dn(b);}
+    r.bitcoin.forEach(function(w){h+=wcard('BTC #'+w.index,w.address,w.wif,'WIF (Private Key)');});
+    h+='<div class="ms wn">Saved to: <span class="mo">'+r.file+'</span><br>Write down keys and DELETE the file!</div>';
+    el('gen-r').innerHTML=h;
+  }catch(e){setMsg('gen-r',e.message,'er');}finally{dn(b);}
 }
 
 // DISPOSABLE
-async function genDisp(c,n,b){ld(b);try{const r=await api('generate-disposable',{crypto:c,count:n});if(r.error){msg('dr',r.error,'er');return;}msg('dr',`Generated ${r.btc||0} BTC + ${r.eth||0} ETH`,'ok');loadSt();}catch(e){msg('dr',e.message,'er');}finally{dn(b);}}
+async function genDisp(c,n,b){ld(b);try{var r=await callApi('generate-disposable',{crypto:c,count:n});if(r.error){setMsg('dr',r.error,'er');return;}setMsg('dr','Generated '+(r.btc||0)+' BTC + '+(r.eth||0)+' ETH','ok');loadSt();}catch(e){setMsg('dr',e.message,'er');}finally{dn(b);}}
 
-async function dispList(s,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');try{const r=await api('disposable/list',{state:s});const items=r[s]||[];$('dl').innerHTML=items.length?items.map(a=>`<div class="ai"><span class="mo">${a.address}</span><span class="at">${a.crypto}</span></div>`).join(''):'<div style="padding:8px;color:var(--text2);font-size:11px">No addresses</div>';}catch(e){$('dl').innerHTML=`<div class="ms er">${e.message}</div>`;}}
+async function dispList(s,tabEl){document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});tabEl.classList.add('on');try{var r=await callApi('disposable/list',{state:s});var items=r[s]||[];el('dl').innerHTML=items.length?items.map(function(a){return '<div class="ai"><span class="mo">'+a.address+'</span><span class="at">'+a.crypto+'</span></div>';}).join(''):'<div style="padding:8px;color:var(--text2);font-size:11px">No addresses</div>';}catch(e){el('dl').innerHTML='<div class="ms er">'+e.message+'</div>';}}
 
-async function dispGet(c,b){ld(b);try{const r=await api('disposable/get-address',{crypto:c});if(r.error){msg('dr',r.error,'er');return;}msg('dr',`${r.crypto.toUpperCase()}: <span class="mo">${r.address}</span><br>${r.warning}`,'ok');loadSt();}catch(e){msg('dr',e.message,'er');}finally{dn(b);}}
+async function dispGet(c,b){ld(b);try{var r=await callApi('disposable/get-address',{crypto:c});if(r.error){setMsg('dr',r.error,'er');return;}setMsg('dr',r.crypto.toUpperCase()+': <span class="mo">'+r.address+'</span><br>'+r.warning,'ok');loadSt();}catch(e){setMsg('dr',e.message,'er');}finally{dn(b);}}
 
 // SEND BTC
-async function prepBtc(b){ld(b);try{const r=await api('prepare-btc',{wif:$('bw').value});if(r.error){msg('br',r.error,'er');$('bi').classList.add('hide');return;}
-  $('bb').innerHTML=`<div class="rw"><span class="l">Address</span><span class="r mo">${r.address}</span></div><div class="rw"><span class="l">Type</span><span class="r">${r.type}</span></div><div class="rw"><span class="l">Balance</span><span class="r">${(r.balance_sats/1e8).toFixed(8)} BTC</span></div><div class="rw"><span class="l">UTXOs</span><span class="r">${r.utxos}</span></div><div class="rw"><span class="l">Fee</span><span class="r">${r.fees?.halfHourFee||10} sat/vB</span></div>`;
-  $('bf').value=r.fees?.halfHourFee||10;$('bi').classList.remove('hide');$('br').innerHTML='';
-}catch(e){msg('br',e.message,'er');}finally{dn(b);}}
+async function prepBtc(b){ld(b);try{var r=await callApi('prepare-btc',{wif:el('bw').value});if(r.error){setMsg('br',r.error,'er');el('bi').classList.add('hide');return;}
+  var fee=r.fees&&r.fees.halfHourFee?r.fees.halfHourFee:10;
+  el('bb').innerHTML='<div class="rw"><span class="l">Address</span><span class="r mo">'+r.address+'</span></div><div class="rw"><span class="l">Type</span><span class="r">'+r.type+'</span></div><div class="rw"><span class="l">Balance</span><span class="r">'+(r.balance_sats/1e8).toFixed(8)+' BTC</span></div><div class="rw"><span class="l">UTXOs</span><span class="r">'+r.utxos+'</span></div><div class="rw"><span class="l">Fee</span><span class="r">'+fee+' sat/vB</span></div>';
+  el('bf').value=fee;el('bi').classList.remove('hide');el('br').innerHTML='';
+}catch(e){setMsg('br',e.message,'er');}finally{dn(b);}}
 
 async function sendBtc(b){if(!confirm('Sign and broadcast BTC? IRREVERSIBLE.'))return;ld(b);try{
-  const r=await api('send-btc',{wif:$('bw').value,destination:$('bd').value,fee_rate:parseInt($('bf').value)});
-  $('bw').value='';if(r.error&&!r.success){msg('br',r.error,'er');return;}
-  if(r.success)msg('br',`Sent ${r.amount_btc} BTC<br>TXID: <span class="mo">${r.txid}</span>`,'ok');
-  else msg('br',`Signed but broadcast failed. Saved: <span class="mo">${r.file}</span>`,'wn');
-  $('bi').classList.add('hide');
-}catch(e){msg('br',e.message,'er');}finally{dn(b);}}
+  var r=await callApi('send-btc',{wif:el('bw').value,destination:el('bd').value,fee_rate:parseInt(el('bf').value)});
+  el('bw').value='';if(r.error&&!r.success){setMsg('br',r.error,'er');return;}
+  if(r.success)setMsg('br','Sent '+r.amount_btc+' BTC<br>TXID: <span class="mo">'+r.txid+'</span>','ok');
+  else setMsg('br','Signed but broadcast failed. Saved: <span class="mo">'+r.file+'</span>','wn');
+  el('bi').classList.add('hide');
+}catch(e){setMsg('br',e.message,'er');}finally{dn(b);}}
 
 // SEND ETH
-async function prepEth(b){ld(b);try{const r=await api('prepare-eth',{private_key:$('ep').value});if(r.error){msg('er',r.error,'er');$('ei').classList.add('hide');return;}
-  let fl='';if(r.fees){fl=r.fees.legacy?`<div class="rw"><span class="l">Gas Price</span><span class="r">${r.fees.maxFee_gwei} Gwei</span></div>`:`<div class="rw"><span class="l">Base Fee</span><span class="r">${r.fees.baseFee_gwei} Gwei</span></div><div class="rw"><span class="l">Max Fee</span><span class="r">${r.fees.maxFee_gwei} Gwei</span></div><div class="rw"><span class="l">Priority</span><span class="r">${r.fees.priority_gwei} Gwei</span></div>`;}
-  $('eb').innerHTML=`<div class="rw"><span class="l">Address</span><span class="r mo">${r.address}</span></div><div class="rw"><span class="l">Balance</span><span class="r">${parseFloat(r.balance_eth).toFixed(6)} ETH</span></div><div class="rw"><span class="l">Nonce</span><span class="r">${r.nonce}</span></div>${fl}`;
-  $('ei').classList.remove('hide');$('er').innerHTML='';
-}catch(e){msg('er',e.message,'er');}finally{dn(b);}}
+async function prepEth(b){ld(b);try{var r=await callApi('prepare-eth',{private_key:el('ep').value});if(r.error){setMsg('er',r.error,'er');el('ei').classList.add('hide');return;}
+  var fl='';if(r.fees){fl=r.fees.legacy?'<div class="rw"><span class="l">Gas Price</span><span class="r">'+r.fees.maxFee_gwei+' Gwei</span></div>':'<div class="rw"><span class="l">Base Fee</span><span class="r">'+r.fees.baseFee_gwei+' Gwei</span></div><div class="rw"><span class="l">Max Fee</span><span class="r">'+r.fees.maxFee_gwei+' Gwei</span></div><div class="rw"><span class="l">Priority</span><span class="r">'+r.fees.priority_gwei+' Gwei</span></div>';}
+  el('eb').innerHTML='<div class="rw"><span class="l">Address</span><span class="r mo">'+r.address+'</span></div><div class="rw"><span class="l">Balance</span><span class="r">'+parseFloat(r.balance_eth).toFixed(6)+' ETH</span></div><div class="rw"><span class="l">Nonce</span><span class="r">'+r.nonce+'</span></div>'+fl;
+  el('ei').classList.remove('hide');el('er').innerHTML='';
+}catch(e){setMsg('er',e.message,'er');}finally{dn(b);}}
 
 async function sendEth(b){if(!confirm('Sign and broadcast ETH? IRREVERSIBLE.'))return;ld(b);try{
-  const r=await api('send-eth',{private_key:$('ep').value,destination:$('ed').value});
-  $('ep').value='';if(r.error&&!r.success){msg('er',r.error,'er');return;}
-  if(r.success)msg('er',`Sent ${r.amount_eth} ETH<br>TX: <span class="mo">${r.txid}</span>`,'ok');
-  else msg('er',`Signed but broadcast failed. Saved: <span class="mo">${r.file}</span>`,'wn');
-  $('ei').classList.add('hide');
-}catch(e){msg('er',e.message,'er');}finally{dn(b);}}
+  var r=await callApi('send-eth',{private_key:el('ep').value,destination:el('ed').value});
+  el('ep').value='';if(r.error&&!r.success){setMsg('er',r.error,'er');return;}
+  if(r.success)setMsg('er','Sent '+r.amount_eth+' ETH<br>TX: <span class="mo">'+r.txid+'</span>','ok');
+  else setMsg('er','Signed but broadcast failed. Saved: <span class="mo">'+r.file+'</span>','wn');
+  el('ei').classList.add('hide');
+}catch(e){setMsg('er',e.message,'er');}finally{dn(b);}}
+
+// Expose to onclick handlers
+window.loadSt=loadSt;
+window.torAct=torAct;
+window.genWal=genWal;
+window.genDisp=genDisp;
+window.dispList=dispList;
+window.dispGet=dispGet;
+window.prepBtc=prepBtc;
+window.sendBtc=sendBtc;
+window.prepEth=prepEth;
+window.sendEth=sendEth;
 
 // INIT
-let _busy=false;
+var _busy=false;
 async function autoRefresh(){if(_busy)return;_busy=true;try{await loadSt();}finally{_busy=false;}}
+window.autoRefresh=autoRefresh;
 autoRefresh();
 dispList('active',document.querySelector('.tab.on'));
 setTimeout(autoRefresh,3000);
 setTimeout(autoRefresh,8000);
 setInterval(autoRefresh,20000);
+
+})();
 </script>
 </body>
 </html>
