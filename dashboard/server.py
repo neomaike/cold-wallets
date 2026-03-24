@@ -559,13 +559,20 @@ def api_send_eth(data):
 _rpc_process = None
 
 
+def _invalidate_status():
+    """Force status cache to refresh on next request"""
+    global _status_cache
+    with _status_lock:
+        _status_cache = None
+
+
 def api_rpc_start(data):
     """Start the ETH RPC proxy on port 8545 (requires Tor)"""
     global _rpc_process
     if _tcp_probe("127.0.0.1", 8545):
+        _invalidate_status()
         return {"ok": True, "msg": "RPC already running on port 8545"}
 
-    # Check Tor first
     tor = check_tor()
     if not tor["connected"]:
         return {"ok": False,
@@ -577,14 +584,14 @@ def api_rpc_start(data):
         _rpc_process = subprocess.Popen(
             [python, "-B", proxy_script],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            creationflags=0x08000000,  # CREATE_NO_WINDOW
+            creationflags=0x08000000,
         )
-        # Wait for port to open
         for _ in range(10):
             time.sleep(0.5)
             if _tcp_probe("127.0.0.1", 8545):
+                _invalidate_status()
                 return {"ok": True,
-                        "msg": "RPC proxy started on port 8545 (via Tor)"}
+                        "msg": "RPC proxy started on port 8545"}
         return {"ok": False,
                 "msg": "RPC proxy started but port 8545 not responding"}
     except Exception as e:
@@ -597,7 +604,9 @@ def api_rpc_stop(data):
     if _rpc_process and _rpc_process.poll() is None:
         _rpc_process.terminate()
         _rpc_process = None
+        _invalidate_status()
         return {"ok": True, "msg": "RPC proxy stopped"}
+    _invalidate_status()
     return {"ok": True, "msg": "RPC proxy not running (managed)"}
 
 
@@ -605,18 +614,21 @@ def api_tor_start(data):
     from tor_manager import start_tor, download_tor, status as tor_status
     s = tor_status()
     if s["running"]:
+        _invalidate_status()
         return {"ok": True, "msg": f"Tor already running on port {s['port']}"}
     if not s["downloaded"]:
         ok, msg = download_tor(progress_cb=lambda m: None)
         if not ok:
             return {"ok": False, "msg": msg}
     ok, msg = start_tor()
+    _invalidate_status()
     return {"ok": ok, "msg": msg}
 
 
 def api_tor_stop(data):
     from tor_manager import stop_tor
     ok, msg = stop_tor()
+    _invalidate_status()
     return {"ok": ok, "msg": msg}
 
 

@@ -282,10 +282,10 @@ async function loadSt() {
 }
 
 // TOR
-async function torAct(a,b){ld(b);try{var r=await callApi('tor/'+a);setMsg('tor-msg',r.msg,r.ok?'ok':'er');if(r.ok)setTimeout(autoRefresh,2000);}catch(e){setMsg('tor-msg',e.message,'er');}finally{dn(b);}}
+async function torAct(a,b){ld(b);try{var r=await callApi('tor/'+a);setMsg('tor-msg',r.msg,r.ok?'ok':'er');setTimeout(autoRefresh,1000);setTimeout(autoRefresh,3000);}catch(e){setMsg('tor-msg',e.message,'er');}finally{dn(b);}}
 
 // RPC
-async function rpcAct(a,b){ld(b);try{var r=await callApi('rpc/'+a);setMsg('rpc-msg',r.msg,r.ok?'ok':'er');if(r.ok)setTimeout(autoRefresh,2000);}catch(e){setMsg('rpc-msg',e.message,'er');}finally{dn(b);}}
+async function rpcAct(a,b){ld(b);try{var r=await callApi('rpc/'+a);setMsg('rpc-msg',r.msg,r.ok?'ok':'er');setTimeout(autoRefresh,1000);setTimeout(autoRefresh,3000);}catch(e){setMsg('rpc-msg',e.message,'er');}finally{dn(b);}}
 
 // GENERATE WALLETS
 function toggleKey(id){var i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
