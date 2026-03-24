@@ -85,8 +85,7 @@ def check_tor():
                         "ip": d.get("IP", "unknown"),
                         "port": port}
         except Exception:
-            # Port open but SOCKS failed — might be starting up
-            return {"connected": False, "ip": None, "port": port}
+            continue  # Try next port
     return {"connected": False, "ip": None, "port": None}
 
 
@@ -112,9 +111,11 @@ def check_rpc():
             json={"jsonrpc": "2.0", "method": "eth_blockNumber",
                   "params": [], "id": 1},
             timeout=2)
-        if r.status_code == 200 and "result" in r.json():
-            block_hex = r.json()["result"]
-            return {"responding": True, "block": int(block_hex, 16)}
+        if r.status_code == 200:
+            data = r.json()
+            if "result" in data:
+                return {"responding": True,
+                        "block": int(data["result"], 16)}
     except Exception:
         pass
     return {"responding": False, "block": None}
@@ -292,28 +293,28 @@ def api_disposable_get(data):
     if not available:
         return {"error": "No addresses available. Generate more first."}
 
-    addr_file = available[0]
-    with open(addr_file) as f:
-        addr_data = json.load(f)
+    # Try each file until one succeeds (handles race condition)
+    for addr_file in available:
+        new_path = ACTIVE_DIR / addr_file.name
+        try:
+            addr_file.rename(new_path)
+        except (OSError, FileNotFoundError):
+            continue  # Another thread got this one
 
-    addr_data["status"] = "active"
-    addr_data["activated_at"] = datetime.now().isoformat()
-
-    new_path = ACTIVE_DIR / addr_file.name
-    try:
-        addr_file.rename(new_path)
-    except OSError:
+        with open(new_path) as f:
+            addr_data = json.load(f)
+        addr_data["status"] = "active"
+        addr_data["activated_at"] = datetime.now().isoformat()
         with open(new_path, "w") as f:
             json.dump(addr_data, f, indent=2)
-        addr_file.unlink()
-    with open(new_path, "w") as f:
-        json.dump(addr_data, f, indent=2)
 
-    return {
-        "crypto": addr_data["crypto"],
-        "address": addr_data["address"],
-        "warning": "Use this address ONLY ONCE."
-    }
+        return {
+            "crypto": addr_data["crypto"],
+            "address": addr_data["address"],
+            "warning": "Use this address ONLY ONCE."
+        }
+
+    return {"error": "No addresses available (all claimed). Generate more."}
 
 
 def api_prepare_btc(data):
@@ -539,7 +540,7 @@ def api_send_eth(data):
         json.dump({
             "type": "ethereum", "raw_transaction": raw_tx,
             "from": account.address, "to": dest,
-            "amount_wei": send_wei, "gas_limit": gas_limit,
+            "amount_wei": str(send_wei), "gas_limit": gas_limit,
             "send_all": True,
             "signed_at": datetime.now().isoformat()
         }, f, indent=2)
@@ -557,6 +558,7 @@ def api_send_eth(data):
 
 
 _rpc_process = None
+_rpc_lock = threading.Lock()
 
 
 def _invalidate_status():
@@ -569,43 +571,47 @@ def _invalidate_status():
 def api_rpc_start(data):
     """Start the ETH RPC proxy on port 8545 (requires Tor)"""
     global _rpc_process
-    if _tcp_probe("127.0.0.1", 8545):
-        _invalidate_status()
-        return {"ok": True, "msg": "RPC already running on port 8545"}
+    with _rpc_lock:
+        if _tcp_probe("127.0.0.1", 8545):
+            _invalidate_status()
+            return {"ok": True, "msg": "RPC already running on port 8545"}
 
-    tor = check_tor()
-    if not tor["connected"]:
-        return {"ok": False,
-                "msg": "Tor not connected. Start Tor first."}
+        tor = check_tor()
+        if not tor["connected"]:
+            return {"ok": False,
+                    "msg": "Tor not connected. Start Tor first."}
 
-    try:
-        python = sys.executable
-        proxy_script = str(TOOLS_DIR / "eth_rpc_proxy.py")
-        _rpc_process = subprocess.Popen(
-            [python, "-B", proxy_script],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            creationflags=0x08000000,
-        )
-        for _ in range(10):
-            time.sleep(0.5)
-            if _tcp_probe("127.0.0.1", 8545):
-                _invalidate_status()
-                return {"ok": True,
-                        "msg": "RPC proxy started on port 8545"}
-        return {"ok": False,
-                "msg": "RPC proxy started but port 8545 not responding"}
-    except Exception as e:
-        return {"ok": False, "msg": f"Failed to start RPC: {e}"}
+        try:
+            python = sys.executable
+            proxy_script = str(TOOLS_DIR / "eth_rpc_proxy.py")
+            _rpc_process = subprocess.Popen(
+                [python, "-B", proxy_script],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                creationflags=0x08000000,
+            )
+        except Exception as e:
+            return {"ok": False, "msg": f"Failed to start RPC: {e}"}
+
+    # Wait outside lock (don't hold lock during sleep)
+    for _ in range(10):
+        time.sleep(0.5)
+        if _tcp_probe("127.0.0.1", 8545):
+            _invalidate_status()
+            return {"ok": True,
+                    "msg": "RPC proxy started on port 8545"}
+    return {"ok": False,
+            "msg": "RPC proxy started but port 8545 not responding"}
 
 
 def api_rpc_stop(data):
     """Stop the managed RPC proxy"""
     global _rpc_process
-    if _rpc_process and _rpc_process.poll() is None:
-        _rpc_process.terminate()
-        _rpc_process = None
-        _invalidate_status()
-        return {"ok": True, "msg": "RPC proxy stopped"}
+    with _rpc_lock:
+        if _rpc_process and _rpc_process.poll() is None:
+            _rpc_process.terminate()
+            _rpc_process = None
+            _invalidate_status()
+            return {"ok": True, "msg": "RPC proxy stopped"}
     _invalidate_status()
     return {"ok": True, "msg": "RPC proxy not running (managed)"}
 
@@ -713,8 +719,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length) if length else b"{}"
             data = json.loads(body) if body else {}
-        except Exception:
-            data = {}
+        except (json.JSONDecodeError, ValueError):
+            self._send_json({"error": "Invalid JSON body"}, 400)
+            return
 
         try:
             result = handler(data)

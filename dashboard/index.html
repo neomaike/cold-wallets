@@ -270,11 +270,12 @@ label{font-size:9px;color:var(--text3);margin-bottom:3px;display:block;font-weig
 
 function callApi(ep,d){d=d||{};var c=new AbortController();var t=setTimeout(function(){c.abort();},30000);return fetch('/api/'+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d),signal:c.signal}).then(function(r){return r.json();}).finally(function(){clearTimeout(t);});}
 function el(id){return document.getElementById(id);}
+function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
 function setMsg(id,t,c){c=c||'in';el(id).innerHTML='<div class="ms '+c+'">'+t+'</div>';}
 function ld(b){b.disabled=true;b._t=b.innerHTML;b.innerHTML='<span class="sp"></span>';}
 function dn(b){b.disabled=false;b.innerHTML=b._t;}
 function dot(ok){return ok?'<span class="d g"></span>':'<span class="d r"></span>';}
-function cpk(txt,b){navigator.clipboard.writeText(txt).then(function(){var o=b.textContent;b.textContent='OK';b.style.color='var(--green)';setTimeout(function(){b.textContent=o;b.style.color='';},1000);});}
+function cpk(txt,b){navigator.clipboard.writeText(txt).then(function(){var o=b.textContent;b.textContent='OK';b.style.color='var(--green)';setTimeout(function(){b.textContent=o;b.style.color='';},1000);}).catch(function(){b.textContent='Err';b.style.color='var(--red)';setTimeout(function(){b.textContent='Copy';b.style.color='';},1500);});}
 window.cpk=cpk;
 function toggleKey(id){var i=document.getElementById(id);i.type=i.type==='password'?'text':'password';var btn=i.parentElement.querySelector('.tk');if(btn)btn.textContent=i.type==='password'?'Show':'Hide';}
 window.toggleKey=toggleKey;
@@ -290,11 +291,11 @@ async function loadSt(){
     var depOk=s.deps&&Object.values(s.deps).every(function(v){return v;});
     el('pills').innerHTML=(torC?'<span class="pill g">Tor</span>':'<span class="pill r">Tor</span>')+(s.admin?'<span class="pill g">Admin</span>':'<span class="pill y">No Admin</span>')+(depOk?'<span class="pill g">Deps</span>':'<span class="pill r">Deps</span>');
     var h='';
-    h+='<div class="rw"><span class="l">Tor</span><span class="r">'+dot(torC)+(torC?'Port '+s.tor.port+' <span class="mo">'+s.tor.ip+'</span>':'Off')+'</span></div>';
+    h+='<div class="rw"><span class="l">Tor</span><span class="r">'+dot(torC)+(torC?'Port '+esc(s.tor.port)+' <span class="mo">'+esc(s.tor.ip)+'</span>':'Off')+'</span></div>';
     h+='<div class="rw"><span class="l">Network</span><span class="r">'+dot(s.online)+(s.online?'Online':'Offline')+'</span></div>';
     h+='<div class="rw"><span class="l">Admin</span><span class="r">'+dot(s.admin)+(s.admin?'Yes':'No')+'</span></div>';
     h+='<div class="rw"><span class="l">Docker</span><span class="r">'+dot(s.docker)+(s.docker?'Yes':'No')+'</span></div>';
-    h+='<div class="rw"><span class="l">Python</span><span class="r">'+s.python+'</span></div>';
+    h+='<div class="rw"><span class="l">Python</span><span class="r">'+esc(s.python)+'</span></div>';
     if(s.deps){var dl=Object.entries(s.deps).map(function(e){return dot(e[1])+e[0];}).join(' ');h+='<div class="rw"><span class="l">Deps</span><span class="r" style="font-size:11px">'+dl+'</span></div>';}
     el('st-body').innerHTML=h;
     el('tor-ctl').classList.toggle('hide',torC===true);
