@@ -21,14 +21,13 @@ echo   COLD WALLETS - SETUP ^& LAUNCH
 echo  ============================================
 echo.
 echo  Running as Administrator [OK]
-echo  Directory: %cd%
 echo.
 
 :: ============================================================================
 :: [1] CHECK PYTHON
 :: ============================================================================
 
-echo [1/4] Checking Python...
+echo [1/3] Checking Python...
 
 set "PYTHON=C:\Python314\python.exe"
 if not exist "%PYTHON%" (
@@ -51,7 +50,7 @@ for /f "tokens=*" %%v in ('"%PYTHON%" --version 2^>^&1') do echo       %%v [OK]
 :: ============================================================================
 
 echo.
-echo [2/4] Checking dependencies...
+echo [2/3] Checking dependencies...
 
 "%PYTHON%" -c "import eth_account, bit, requests, socks" >nul 2>&1
 if errorlevel 1 (
@@ -59,7 +58,6 @@ if errorlevel 1 (
     "%PYTHON%" -m pip install --quiet --disable-pip-version-check eth-account bit "requests[socks]" PySocks
     if errorlevel 1 (
         echo       [ERROR] Failed to install dependencies!
-        echo       Run manually: %PYTHON% -m pip install eth-account bit "requests[socks]" PySocks
         pause
         exit /b 1
     )
@@ -69,33 +67,19 @@ if errorlevel 1 (
 )
 
 :: ============================================================================
-:: [3] AUTO-START TOR IN BACKGROUND
+:: [3] START DASHBOARD (Tor handled inside dashboard, not here)
 :: ============================================================================
 
 echo.
-echo [3/4] Starting Tor...
-
-"%PYTHON%" tools\tor_manager.py status 2>nul | findstr "Running: True" >nul
-if not errorlevel 1 (
-    echo       Tor already running [OK]
-) else (
-    echo       Attempting to start Tor...
-    "%PYTHON%" tools\tor_manager.py start
-)
-
-:: ============================================================================
-:: [4] START DASHBOARD
-:: ============================================================================
-
-echo.
-echo [4/4] Starting dashboard...
+echo [3/3] Starting dashboard...
 echo.
 echo  ============================================
 echo   Dashboard: http://127.0.0.1:8080
-echo   Admin: YES
 echo  ============================================
 echo.
-echo  Opening browser...
+echo  Use the dashboard to manage Tor, wallets,
+echo  and transactions.
+echo.
 echo  Press Ctrl+C to stop.
 echo.
 
@@ -104,8 +88,5 @@ start "" "http://127.0.0.1:8080"
 "%PYTHON%" dashboard\server.py
 
 echo.
-echo  Stopping Tor...
-"%PYTHON%" tools\tor_manager.py stop 2>nul
-
 echo  Dashboard stopped.
 pause
