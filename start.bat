@@ -7,7 +7,7 @@ setlocal enabledelayedexpansion
 net session >nul 2>&1
 if errorlevel 1 (
     echo Requesting administrator privileges...
-    powershell -Command "Start-Process cmd -ArgumentList '/c cd /d \"%~dp0\" && \"%~f0\"' -Verb RunAs"
+    powershell -Command "Start-Process -FilePath '%~f0' -Verb RunAs -Wait"
     exit /b
 )
 
@@ -19,6 +19,9 @@ echo.
 echo  ============================================
 echo   COLD WALLETS - SETUP ^& LAUNCH
 echo  ============================================
+echo.
+echo  Running as Administrator [OK]
+echo  Directory: %cd%
 echo.
 
 :: ============================================================================
@@ -72,12 +75,12 @@ if errorlevel 1 (
 echo.
 echo [3/4] Starting Tor...
 
-"%PYTHON%" -c "from tools.tor_manager import is_tor_running; print('OK' if is_tor_running() else 'NO')" 2>nul | findstr "OK" >nul
+"%PYTHON%" tools\tor_manager.py status 2>nul | findstr "Running: True" >nul
 if not errorlevel 1 (
     echo       Tor already running [OK]
 ) else (
-    echo       Starting Tor in background...
-    "%PYTHON%" -c "from tools.tor_manager import start_tor, download_tor; download_tor(print) if not __import__('pathlib').Path('tools/tor_runtime').rglob('tor.exe') else None; ok,msg = start_tor(); print(f'       {msg}')"
+    echo       Attempting to start Tor...
+    "%PYTHON%" tools\tor_manager.py start
 )
 
 :: ============================================================================
@@ -89,21 +92,20 @@ echo [4/4] Starting dashboard...
 echo.
 echo  ============================================
 echo   Dashboard: http://127.0.0.1:8080
-echo   Admin: YES    Tor: background
+echo   Admin: YES
 echo  ============================================
 echo.
 echo  Opening browser...
 echo  Press Ctrl+C to stop.
 echo.
 
-start "" cmd /c "timeout /t 2 /nobreak >nul && start http://127.0.0.1:8080"
+start "" "http://127.0.0.1:8080"
 
 "%PYTHON%" dashboard\server.py
 
 echo.
+echo  Stopping Tor...
+"%PYTHON%" tools\tor_manager.py stop 2>nul
+
 echo  Dashboard stopped.
-
-:: Stop managed Tor on exit
-"%PYTHON%" -c "from tools.tor_manager import stop_tor; stop_tor()" 2>nul
-
 pause
