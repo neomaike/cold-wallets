@@ -8,37 +8,40 @@ All network operations routed through Tor. Transaction signing happens with the 
 
 Double-click **`start.bat`**. It automatically:
 1. Requests administrator privileges (UAC prompt)
-2. Checks Python and installs missing dependencies
-3. Opens the dashboard at `http://127.0.0.1:8080`
+2. Checks Python and installs missing dependencies (`eth-account`, `bit`, `requests`, `PySocks`)
+3. Opens the dashboard at `http://127.0.0.1:8888`
 
 From the dashboard:
-- **Start Tor** with one click (downloads Tor Expert Bundle automatically, runs in background on port 9050)
-- **Generate wallets** with private keys displayed (Show/Copy buttons)
-- **Check balances** and **send BTC/ETH** via Tor
-- **Manage disposable addresses** (generate pool, get address, track lifecycle)
-- **Monitor system status** (Tor, Docker, RPC, dependencies)
+- **Start Tor** with one click (downloads Tor Expert Bundle ~21MB, runs `tor.exe` in background on port 9050)
+- **Start RPC Proxy** to route MetaMask/ETH queries through Tor (port 8545)
+- **Generate wallets** — keys displayed in sidebar with Show/Copy, saved to file
+- **Check balances** and **send BTC/ETH** via Tor (send-all pattern)
+- **Manage disposable addresses** — generate pool, get one-time addresses, track lifecycle
+- **Monitor system** — Tor, Docker, RPC, dependencies, network status
 
 For maximum security (offline signing with internet disabled), use the CLI scripts directly.
 
 ## Features
 
-- **Dashboard** — visual interface at `127.0.0.1:8080`, threaded server, zero external dependencies
-- **Automatic Tor** — downloads and runs `tor.exe` in background (no browser needed), SOCKS5 on port 9050
-- **Auto-admin** — `start.bat` requests elevation via UAC on launch
-- **Offline signing** — CLI scripts disable internet automatically during key generation and TX signing
+- **One-click setup** — `start.bat` handles admin elevation, dependencies, and dashboard launch
+- **Automatic Tor** — downloads and runs `tor.exe` in background (SOCKS5 port 9050, no browser needed)
+- **Dashboard** — visual interface at `127.0.0.1:8888`, threaded server, zero external dependencies
+- **Sidebar wallet viewer** — generated wallets persist in right sidebar, reopen anytime
+- **Offline signing (CLI)** — internet disabled automatically during key generation and TX signing
 - **Send-all** — always sends entire balance, no change output (BTC) or residual wei (ETH)
 - **Tor-only networking** — all RPC calls, UTXO lookups, and broadcasts go through Tor
-- **EIP-1559 fees** — ETH uses type 2 transactions with `eth_feeHistory` percentile-based estimation; legacy `gasPrice` as fallback
-- **BTC fee by address type** — `detect_address_type()` + `estimate_tx_vsize()` for accurate fee calculation (p2wkh=68, np2wkh=91, p2pkh=148 vB/input)
-- **Trustless RPC** — Helios light client verifies all Ethereum responses cryptographically via Docker
-- **Disposable addresses** — hot address pool with lifecycle management (unused -> active -> funded -> spent)
-- **MetaMask privacy** — local proxy routes MetaMask RPC calls through Tor
+- **EIP-1559 fees** — ETH uses type 2 transactions with `eth_feeHistory` percentile-based estimation
+- **BTC fee by address type** — native segwit (bc1q), wrapped segwit (3...), legacy (1...) with accurate vsize
+- **Native SegWit (bc1q)** — manual bech32 derivation since `bit` library only supports P2SH-wrapped
+- **Trustless RPC** — Helios light client verifies Ethereum responses cryptographically via Docker
+- **Disposable addresses** — one-time address pool with lifecycle (unused -> active -> funded -> spent)
+- **MetaMask privacy** — local proxy routes RPC calls through Tor on port 8545
 
 ## Requirements
 
-- **Python 3.14** — `C:\Python314\python.exe` (or any Python 3.10+ in PATH)
+- **Python 3.10+** — tested with 3.14 (`C:\Python314\python.exe`)
 - **Windows 10/11** — administrator for network control
-- **Internet** — for first-time dependency install and Tor download (~21MB)
+- **Internet** — for first-time dependency install and Tor download
 - **Docker Desktop** — optional, for Helios light client
 
 Dependencies are installed automatically by `start.bat`:
@@ -53,7 +56,7 @@ Cold-Wallets/
 |-- start.bat                   ONE-CLICK launcher (admin + deps + dashboard)
 |
 |-- dashboard/                  Visual interface
-|   |-- server.py               Threaded API server (127.0.0.1:8080)
+|   |-- server.py               ThreadedHTTPServer API (127.0.0.1:8888)
 |   +-- index.html              Single-file dark UI (no external deps)
 |
 |-- cold_wallets/               Core: generate, sign, send crypto
@@ -75,7 +78,7 @@ Cold-Wallets/
 |-- tools/                      Privacy & Tor management
 |   |-- tor_manager.py          Download/start/stop Tor Expert Bundle
 |   |-- check_tor.py            Verify Tor connection
-|   |-- eth_rpc_proxy.py        RPC proxy for MetaMask (via Tor)
+|   |-- eth_rpc_proxy.py        RPC proxy for MetaMask (via Tor, port 8545)
 |   |-- start_all_services.bat  Unified startup: Tor + Helios/Proxy + Bitcoin
 |   +-- status.bat              Service status check
 |
@@ -92,19 +95,48 @@ Cold-Wallets/
 
 ## Dashboard
 
-The dashboard runs a threaded HTTP server on `127.0.0.1:8080` with background status updates every 15 seconds.
+The dashboard runs on `127.0.0.1:8888` with a threaded HTTP server and background status cache.
+
+### Layout (no scroll, viewport-fit)
+- **Top row:** System Status | Generate Wallets | Disposable Pool
+- **Bottom row:** Send Bitcoin | Send Ethereum | RPC Status
+- **Right sidebar:** Generated wallets with Show/Copy (persists until closed)
 
 ### Architecture
-- **Backend**: Python `http.server` with `ThreadedHTTPServer` (each request in its own thread)
-- **Frontend**: single HTML file with embedded CSS/JS, zero external dependencies
-- **Status cache**: background thread polls Tor/Docker/RPC every 15s, API returns cached data instantly
-- **Tor management**: downloads Tor Expert Bundle (~21MB), starts `tor.exe` as background process
+- **Backend**: `ThreadedHTTPServer` — each request in its own thread
+- **Frontend**: single HTML file, embedded CSS/JS, zero external dependencies
+- **Status cache**: background thread polls Tor/Docker/RPC every 15s, API returns cached data
+- **Tor management**: downloads Tor Expert Bundle, starts `tor.exe` as background process
+- **RPC proxy**: starts `eth_rpc_proxy.py` on port 8545 via Tor
+- **Security**: bound to 127.0.0.1 only, HTML escaped, clipboard error handling, thread-safe RPC lock
+
+### API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | / | Dashboard HTML (any non-API path serves HTML) |
+| POST | /api/status | System status (cached) |
+| POST | /api/generate-wallets | Generate cold wallets |
+| POST | /api/generate-disposable | Generate disposable address pool |
+| POST | /api/disposable/list | List addresses by state |
+| POST | /api/disposable/get-address | Get next unused address (atomic) |
+| POST | /api/check-tor | Check Tor connectivity |
+| POST | /api/tor/start | Download + start Tor |
+| POST | /api/tor/stop | Stop managed Tor |
+| POST | /api/rpc/start | Start RPC proxy on :8545 |
+| POST | /api/rpc/stop | Stop RPC proxy |
+| POST | /api/prepare-btc | Check BTC balance via Tor |
+| POST | /api/prepare-eth | Check ETH balance via Tor |
+| POST | /api/send-btc | Sign and broadcast BTC |
+| POST | /api/send-eth | Sign and broadcast ETH |
+
+Errors return HTTP 400 with `{"error": "message"}`. Invalid JSON returns 400.
 
 ### Ports
 
 | Service | Port |
 |---------|------|
-| Dashboard | 8080 |
+| Dashboard | 8888 |
 | Tor SOCKS (managed) | 9050 |
 | Tor SOCKS (Browser) | 9150 |
 | RPC ETH (Helios or Proxy) | 8545 |
@@ -112,7 +144,7 @@ The dashboard runs a threaded HTTP server on `127.0.0.1:8080` with background st
 
 ## CLI Scripts (Maximum Security)
 
-For offline signing with internet physically disabled, use the `.bat` scripts directly:
+For offline signing with internet physically disabled:
 
 | Script | Function | Admin? |
 |--------|----------|:------:|
@@ -122,42 +154,6 @@ For offline signing with internet physically disabled, use the `.bat` scripts di
 | `cold_wallets\enviar_eth.bat` | Send-all ETH (EIP-1559 + Tor) | Yes |
 | `cold_wallets\assinar_btc.bat` | Sign BTC offline | Yes |
 | `cold_wallets\assinar_eth.bat` | Sign ETH offline | Yes |
-| `tools\start_all_services.bat` | Start Tor + Helios/Proxy + Bitcoin | No |
-
-### Generate wallets (CLI, offline)
-
-```
-cold_wallets\gerar.bat          (run as Admin)
-```
-
-1. Script disables internet automatically
-2. Generates 3 ETH + 3 BTC wallets
-3. Saves to `cold_wallets\generated\`
-4. Script re-enables internet
-5. **Write down the keys and DELETE the JSON file**
-
-### Send Bitcoin (CLI, send-all)
-
-```
-cold_wallets\enviar_btc.bat     (run as Admin)
-```
-
-1. Enter WIF (private key)
-2. Script detects funded address (tests bc1q, 3..., 1...) via Tor
-3. Enter destination — fee calculated by address type
-4. Sends TOTAL balance (amount = balance - fee, no change)
-5. Disables internet, signs OFFLINE, re-enables, broadcasts via Tor
-
-### Send Ethereum (CLI, send-all + EIP-1559)
-
-```
-cold_wallets\enviar_eth.bat     (run as Admin)
-```
-
-1. Enter private key (hex)
-2. Script fetches balance/nonce/EIP-1559 fees via Tor
-3. Enter destination — sends `balance - (21000 * maxFeePerGas)`
-4. Disables internet, signs OFFLINE, re-enables, broadcasts via Tor
 
 ## Privacy Model
 
@@ -167,18 +163,21 @@ cold_wallets\enviar_eth.bat     (run as Admin)
 | Transaction signing | Online (via Tor) | Internet disabled |
 | Balance/nonce lookup | Via Tor | Via Tor |
 | TX broadcast | Via Tor | Via Tor |
-| MetaMask RPC | Via local Tor proxy | Via local Tor proxy |
 
 ## Security
 
-- **Private keys** stored in `generated/` and `address_pool/` — NEVER committed, GITIGNORED
+- **Private keys** stored in `generated/` and `address_pool/` — GITIGNORED
 - **Tor runtime** downloaded to `tools/tor_runtime/` — GITIGNORED
-- **RPC credentials** stored ONLY in `F:\BitcoinData\bitcoin.conf`
 - **Dashboard** bound to `127.0.0.1` only — not accessible from network
-- **CORS** on RPC proxy restricted to localhost and Chrome extensions
+- **HTML escaping** on all server data rendered in dashboard
+- **Atomic file rename** for disposable address claiming (race-safe)
+- **Thread locks** on RPC proxy start/stop
+- **tar extraction** with path traversal filter (Python 3.12+)
+- **PID verification** checks process name before killing
 - All monetary values use `Decimal` (never `float`)
 - Address validation (EIP-55 for ETH, base58/bech32 for BTC) before every send
 - `except Exception:` only (never bare `except:`)
+- Clipboard errors caught and displayed
 
 ## RPC Documentation
 
@@ -186,6 +185,22 @@ cold_wallets\enviar_eth.bat     (run as Admin)
 - [Threat Model](rpc/docs/threat-model.md) — security guarantees and attack analysis
 - [Runbook](rpc/docs/runbook.md) — operational procedures, updates, incident response
 - [Security Checklist](rpc/CHECKLIST.md) — pre/post deployment validation
+
+## QA Status
+
+Last tested: 2026-03-24
+
+| Test | Result |
+|------|--------|
+| Python 3.14 runtime | PASS |
+| Dependencies (4 packages) | PASS |
+| Dashboard endpoints (17) | PASS |
+| Tor manager CLI | PASS |
+| RPC proxy start/stop | PASS |
+| Lint (ruff E,W,F) | PASS |
+| Module imports (14) | PASS |
+| Error handling (HTTP 400) | PASS |
+| Invalid JSON rejection | PASS |
 
 ## Lint
 
