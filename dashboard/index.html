@@ -193,6 +193,28 @@ label{font-size:9px;color:var(--text3);margin-bottom:3px;display:block;font-weig
     </div>
   </div>
 
+  <!-- DISPOSABLE -->
+  <div class="cd">
+    <div class="cd-h">
+      <div class="cd-h-left"><div class="cd-icon" style="background:rgba(52,211,153,.12);color:var(--green)">D</div><h2>Disposable Pool</h2></div>
+    </div>
+    <div class="cd-b">
+      <div class="sg">
+        <div class="st"><div class="n" id="du">0</div><div class="t">Unused</div></div>
+        <div class="st"><div class="n" id="da">0</div><div class="t">Active</div></div>
+        <div class="st"><div class="n" id="df">0</div><div class="t">Funded</div></div>
+        <div class="st"><div class="n" id="dp">0</div><div class="t">Spent</div></div>
+      </div>
+      <div class="brow"><button class="bt bt-o bt-xs" onclick="genDisp('btc',10,this)">+10 BTC</button><button class="bt bt-o bt-xs" onclick="genDisp('eth',10,this)">+10 ETH</button><button class="bt bt-o bt-xs" onclick="genDisp('both',10,this)">+10 Both</button></div>
+      <div style="margin-top:8px">
+        <div class="tabs"><div class="tab on" onclick="dispList('active',this)">Active</div><div class="tab" onclick="dispList('funded',this)">Funded</div><div class="tab" onclick="dispList('unused',this)">Unused</div></div>
+        <div class="al" id="dl"><div style="padding:6px;color:var(--text3);font-size:10px">Click +10 above to generate a pool</div></div>
+      </div>
+      <div class="brow"><button class="bt bt-o bt-xs" onclick="dispGet('btc',this)">Get BTC</button><button class="bt bt-o bt-xs" onclick="dispGet('eth',this)">Get ETH</button></div>
+      <div id="dr"></div>
+    </div>
+  </div>
+
   <!-- SEND BTC -->
   <div class="cd">
     <div class="cd-h">
@@ -225,28 +247,6 @@ label{font-size:9px;color:var(--text3);margin-bottom:3px;display:block;font-weig
         <button class="bt bt-d bt-full" onclick="sendEth(this)">Sign &amp; Broadcast (EIP-1559)</button>
       </div>
       <div id="er"></div>
-    </div>
-  </div>
-
-  <!-- DISPOSABLE -->
-  <div class="cd">
-    <div class="cd-h">
-      <div class="cd-h-left"><div class="cd-icon" style="background:rgba(52,211,153,.12);color:var(--green)">D</div><h2>Disposable Pool</h2></div>
-    </div>
-    <div class="cd-b">
-      <div class="sg">
-        <div class="st"><div class="n" id="du">0</div><div class="t">Unused</div></div>
-        <div class="st"><div class="n" id="da">0</div><div class="t">Active</div></div>
-        <div class="st"><div class="n" id="df">0</div><div class="t">Funded</div></div>
-        <div class="st"><div class="n" id="dp">0</div><div class="t">Spent</div></div>
-      </div>
-      <div class="brow"><button class="bt bt-o bt-xs" onclick="genDisp('btc',10,this)">+10 BTC</button><button class="bt bt-o bt-xs" onclick="genDisp('eth',10,this)">+10 ETH</button><button class="bt bt-o bt-xs" onclick="genDisp('both',10,this)">+10 Both</button></div>
-      <div style="margin-top:8px">
-        <div class="tabs"><div class="tab on" onclick="dispList('active',this)">Active</div><div class="tab" onclick="dispList('funded',this)">Funded</div><div class="tab" onclick="dispList('unused',this)">Unused</div></div>
-        <div class="al" id="dl"><div style="padding:6px;color:var(--text3);font-size:10px">Click +10 above to generate a pool</div></div>
-      </div>
-      <div class="brow"><button class="bt bt-o bt-xs" onclick="dispGet('btc',this)">Get BTC</button><button class="bt bt-o bt-xs" onclick="dispGet('eth',this)">Get ETH</button></div>
-      <div id="dr"></div>
     </div>
   </div>
 
